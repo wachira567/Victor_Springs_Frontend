@@ -1,0 +1,180 @@
+/* VenueVibe Footer Styles */
+
+.footer {
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  color: #d1d5db;
+  padding-top: 4rem;
+  padding-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(244, 63, 94, 0.3), transparent);
+}
+
+.footer-content {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  margin-bottom: 3rem;
+}
+
+@media (min-width: 768px) {
+  .footer-content {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Brand Section */
+.footer-brand {
+  margin-bottom: 1.5rem;
+}
+
+.footer-logo {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: white;
+  margin-bottom: 1.5rem;
+}
+
+.footer-logo-accent {
+  color: #f43f5e;
+}
+
+.footer-description {
+  color: #9ca3af;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.footer-social {
+  display: flex;
+  gap: 1rem;
+}
+
+.footer-social-link {
+  color: #9ca3af;
+  transition: all 0.2s ease;
+}
+
+.footer-social-link:hover {
+  color: #f43f5e;
+  transform: translateY(-2px);
+}
+
+/* Section Headers */
+.footer-section h4 {
+  color: white;
+  font-weight: bold;
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Links */
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  margin-bottom: 1rem;
+}
+
+.footer-link {
+  color: #9ca3af;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.footer-link:hover {
+  color: white;
+  transform: translateX(4px);
+}
+
+/* Contact Items */
+.footer-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.footer-contact-icon {
+  color: #f43f5e;
+  flex-shrink: 0;
+}
+
+/* Admin Link */
+.footer-admin-link {
+  color: #6b7280;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.footer-admin-link:hover {
+  color: #9ca3af;
+}
+
+/* Bottom Section */
+.footer-bottom {
+  border-top: 1px solid #374151;
+  padding-top: 2rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Decorative Elements */
+.footer-decoration-1 {
+  position: absolute;
+  top: 20%;
+  left: -5%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(244, 63, 94, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.footer-decoration-2 {
+  position: absolute;
+  bottom: 10%;
+  right: -5%;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(55, 48, 163, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .footer {
+    padding-top: 3rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .footer-content {
+    gap: 2rem;
+  }
+
+  .footer-logo {
+    font-size: 1.25rem;
+  }
+
+  .footer-social {
+    gap: 0.75rem;
+  }
+}

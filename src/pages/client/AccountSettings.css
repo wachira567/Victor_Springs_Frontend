@@ -1,0 +1,519 @@
+/* Account Settings Page Styles */
+
+.account-settings-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem 0;
+}
+
+.account-settings-container {
+  width: 100%;
+  padding: 0 1rem;
+}
+
+.account-settings-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.account-settings-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.account-settings-subtitle {
+  font-size: 1.125rem;
+  color: #6b7280;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Profile Section */
+.account-profile-section {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-profile-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.account-profile-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.account-profile-avatar {
+  width: 5rem;
+  height: 5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.account-profile-info h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.account-profile-info p {
+  color: #6b7280;
+  margin-bottom: 0.125rem;
+}
+
+.account-profile-info .account-profile-role {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.account-profile-change-photo {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f3f4f6;
+  color: #374151;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.account-profile-change-photo:hover {
+  background: #e5e7eb;
+}
+
+/* Personal Information */
+.account-personal-info {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 2rem;
+}
+
+.account-personal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.account-personal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.account-edit-profile-btn {
+  background: #4f46e5;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.account-edit-profile-btn:hover {
+  background: #3730a3;
+}
+
+.account-save-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.account-save-btn {
+  background: #10b981;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.account-save-btn:hover {
+  background: #059669;
+}
+
+.account-cancel-btn {
+  background: #6b7280;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.account-cancel-btn:hover {
+  background: #4b5563;
+}
+
+/* Form Fields */
+.account-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.account-form-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.account-form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.account-form-input {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-form-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.account-form-display {
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.account-form-display.empty {
+  color: #9ca3af;
+}
+
+/* Bio Section */
+.account-bio-section {
+  margin-top: 2rem;
+}
+
+.account-bio-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  min-height: 6rem;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-bio-textarea:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Preferences Section */
+.account-preferences-section {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-preferences-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.account-preferences-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.account-preferences-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.account-preference-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.account-preference-item:hover {
+  background: #f3f4f6;
+}
+
+.account-preference-info h4 {
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.account-preference-info p {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Toggle Switch */
+.account-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 2.75rem;
+  height: 1.5rem;
+}
+
+.account-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.account-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 1.5rem;
+}
+
+.account-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 1.25rem;
+  width: 1.25rem;
+  left: 0.125rem;
+  bottom: 0.125rem;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .account-toggle-slider {
+  background-color: #4f46e5;
+}
+
+input:checked + .account-toggle-slider:before {
+  transform: translateX(1.25rem);
+}
+
+/* Security Section */
+.account-security-section {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-security-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.account-security-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.account-security-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.account-security-item {
+  width: 100%;
+  text-align: left;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.account-security-item:hover {
+  background: #f3f4f6;
+}
+
+.account-security-item-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.account-security-item-info h4 {
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.account-security-item-info p {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.account-security-arrow {
+  color: #4f46e5;
+  font-size: 1.25rem;
+}
+
+/* Danger Zone */
+.account-danger-section {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  border: 1px solid #fca5a5;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-danger-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.account-danger-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.account-danger-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.account-danger-zone {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.account-danger-title-small {
+  font-weight: 600;
+  color: #991b1b;
+  margin-bottom: 0.5rem;
+}
+
+.account-danger-text {
+  font-size: 0.875rem;
+  color: #dc2626;
+  margin-bottom: 1rem;
+}
+
+.account-delete-btn {
+  background: #dc2626;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+.account-delete-btn:hover {
+  background: #b91c1c;
+}
+
+/* Loading Spinner */
+.account-loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .account-settings-container {
+    padding: 0 0.5rem;
+  }
+
+  .account-settings-title {
+    font-size: 2rem;
+  }
+
+  .account-profile-avatar-section {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .account-profile-change-photo {
+    margin-left: 0;
+  }
+
+  .account-form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .account-save-actions {
+    flex-direction: column;
+  }
+
+  .account-preference-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}

@@ -1,0 +1,210 @@
+/* Tawk.to Chat Widget Custom Styling */
+
+/* Override default Tawk.to styles for better integration */
+#tawkToContainer {
+  z-index: 9999 !important;
+}
+
+/* Custom chat button styling */
+.tawk-custom-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border-radius: 50% !important;
+  width: 60px !important;
+  height: 60px !important;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4) !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+}
+
+.tawk-custom-button:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 12px 25px rgba(102, 126, 234, 0.6) !important;
+}
+
+/* Chat bubble styling */
+.tawk-chat-bubble {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid #e5e7eb !important;
+  max-width: 350px !important;
+}
+
+/* Chat header styling */
+.tawk-chat-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border-radius: 1rem 1rem 0 0 !important;
+  padding: 1rem !important;
+}
+
+/* Chat messages area */
+.tawk-chat-messages {
+  background: #f9fafb !important;
+  padding: 1rem !important;
+}
+
+/* User message bubbles */
+.tawk-message-user {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+  color: white !important;
+  border-radius: 1rem 1rem 0.25rem 1rem !important;
+  padding: 0.75rem 1rem !important;
+  margin: 0.5rem 0 !important;
+  max-width: 80% !important;
+  margin-left: auto !important;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2) !important;
+}
+
+/* Admin message bubbles */
+.tawk-message-admin {
+  background: white !important;
+  color: #374151 !important;
+  border-radius: 1rem 1rem 1rem 0.25rem !important;
+  padding: 0.75rem 1rem !important;
+  margin: 0.5rem 0 !important;
+  max-width: 80% !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+/* Input area styling */
+.tawk-input-area {
+  background: white !important;
+  border-top: 1px solid #e5e7eb !important;
+  padding: 1rem !important;
+}
+
+.tawk-input {
+  width: 100% !important;
+  padding: 0.75rem 1rem !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.875rem !important;
+  transition: all 0.2s ease !important;
+  background: #f9fafb !important;
+}
+
+.tawk-input:focus {
+  outline: none !important;
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
+  background: white !important;
+}
+
+.tawk-send-button {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.75rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+}
+
+.tawk-send-button:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4) !important;
+}
+
+.tawk-send-button:disabled {
+  background: #d1d5db !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Minimize button */
+.tawk-minimize-button {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: none !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.tawk-minimize-button:hover {
+  background: white !important;
+  transform: scale(1.1) !important;
+}
+
+/* Notification badge */
+.tawk-notification-badge {
+  background: #ef4444 !important;
+  color: white !important;
+  border-radius: 50% !important;
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  top: -5px !important;
+  right: -5px !important;
+  animation: tawk-pulse 2s infinite !important;
+}
+
+@keyframes tawk-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .tawk-chat-bubble {
+    max-width: calc(100vw - 2rem) !important;
+    margin: 0 1rem !important;
+  }
+
+  .tawk-custom-button {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  .tawk-message-user,
+  .tawk-message-admin {
+    max-width: 85% !important;
+  }
+}
+
+/* Hide default Tawk.to branding if needed */
+.tawk-branding {
+  display: none !important;
+}
+
+/* Custom scrollbar for chat messages */
+.tawk-chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tawk-chat-messages::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.tawk-chat-messages::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.tawk-chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
