@@ -1,0 +1,143 @@
+.container {
+  padding-top: 5rem;
+  background: white;
+  min-height: 100vh;
+}
+
+.gallery {
+  height: 60vh;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 4px;
+}
+
+.mainImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.subImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #eee;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 4rem;
+}
+
+.details h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.location {
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.description {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #333;
+  margin-bottom: 3rem;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: var(--radius-sm);
+}
+
+/* BOOKING FORM SIDEBAR */
+.sidebar {
+  position: sticky;
+  top: 6rem;
+  height: fit-content;
+  border: 1px solid var(--color-line);
+  padding: 2rem;
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+.formGroup label {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+.input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-main);
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 1rem;
+  background: black;
+  color: white;
+  font-weight: 700;
+  margin-top: 1rem;
+  transition: opacity 0.2s;
+}
+
+.submitBtn:hover {
+  opacity: 0.8;
+}
+.submitBtn:disabled {
+  background: #ccc;
+}
+
+.successMsg {
+  background: #e6fffa;
+  color: #004d40;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+  .gallery {
+    grid-template-columns: 1fr;
+    height: 40vh;
+  }
+  .subImg {
+    display: none;
+  }
+}

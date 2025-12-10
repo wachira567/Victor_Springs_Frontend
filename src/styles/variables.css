@@ -1,0 +1,27 @@
+:root {
+  /* SWISS PALETTE */
+  --color-bg: #f5f5f7; /* Off-white paper look */
+  --color-surface: #ffffff;
+  --color-text-main: #050505; /* Deepest Black */
+  --color-text-muted: #666666;
+
+  --color-accent: #ff3300; /* International Orange (Call to Action) */
+  --color-line: #e5e5e5; /* Thin grid lines */
+
+  /* TYPOGRAPHY */
+  --font-main: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Helvetica Now Display", "Inter", sans-serif;
+
+  /* LAYOUT */
+  --radius-sm: 4px; /* Brutalist = minimal rounding */
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* GLASSMORPHISM */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-blur: blur(12px);
+
+  /* ANIMATION */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
