@@ -27,11 +27,8 @@ const SavedVenues = () => {
     } catch (error) {
       console.error("Error fetching saved properties:", error);
       if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("user_id");
-        navigate("/login");
-        toast.error("Session expired. Please login again.");
+        toast.error("Session expired. Please sign in again.");
+        // Don't auto-logout, let user decide
       } else {
         toast.error("Failed to load saved properties");
       }
@@ -57,11 +54,8 @@ const SavedVenues = () => {
     } catch (error) {
       console.error("Error unsaving property:", error);
       if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("user_id");
-        navigate("/login");
-        toast.error("Session expired. Please login again.");
+        toast.error("Session expired. Please sign in again.");
+        // Don't auto-logout, let user decide
       } else {
         toast.error("Failed to remove property from saved list");
       }
@@ -99,7 +93,7 @@ const SavedVenues = () => {
         </div>
 
         {/* Content */}
-        {savedVenues.length === 0 ? (
+        {savedProperties.length === 0 ? (
           <div className="empty-state">
             <Heart className="empty-icon" size={64} />
             <h3 className="empty-title">No saved properties yet</h3>

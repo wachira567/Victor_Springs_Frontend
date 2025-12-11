@@ -1,194 +1,246 @@
 import { useEffect, useState, useContext } from "react";
-import api from "../../api/axios";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import api from "../../api/axios";
+import { toast } from "react-toastify";
 import {
   MessageSquare,
-  Send,
-  User,
-  ExternalLink,
   Phone,
   Mail,
+  Calendar,
+  Clock,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
-import { toast } from "react-toastify";
 import "./Messages.css";
 
 const Messages = () => {
   const { user } = useContext(AuthContext);
-  const [isTawkLoaded, setIsTawkLoaded] = useState(false);
+  const navigate = useNavigate();
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
-    // Check if Tawk.to is loaded
-    const checkTawkLoaded = () => {
-      if (window.Tawk_API && window.Tawk_API.getStatus() !== undefined) {
-        setIsTawkLoaded(true);
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    const fetchMessages = async () => {
+      try {
+        // This would be a real API endpoint in production
+        // For now, we'll show mock data
+        const mockMessages = [
+          {
+            id: 1,
+            type: "whatsapp",
+            subject: "Site Visit Confirmation",
+            message:
+              "Your site visit for Nairobi Arboretum has been confirmed for tomorrow at 2:00 PM.",
+            timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+            status: "delivered",
+            sender: "Victor Springs Support",
+          },
+          {
+            id: 2,
+            type: "email",
+            subject: "Property Interest Update",
+            message:
+              "We've received your interest in 3-bedroom apartments. We'll notify you when units become available.",
+            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+            status: "read",
+            sender: "Victor Springs Team",
+          },
+          {
+            id: 3,
+            type: "system",
+            subject: "Booking Reminder",
+            message:
+              "Reminder: Your viewing appointment is scheduled for tomorrow at 10:00 AM.",
+            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+            status: "unread",
+            sender: "System Notification",
+          },
+        ];
+        setMessages(mockMessages);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        toast.error("Failed to load messages");
+      } finally {
+        setLoading(false);
       }
     };
 
-    // Check immediately
-    checkTawkLoaded();
+    fetchMessages();
+  }, [user, navigate]);
 
-    // Also check after a delay in case it loads later
-    const timeout = setTimeout(checkTawkLoaded, 2000);
-
-    return () => clearTimeout(timeout);
-  }, []);
-
-  const openTawkChat = () => {
-    if (window.Tawk_API && isTawkLoaded) {
-      // Set user attributes for better support
-      window.Tawk_API.setAttributes({
-        name: user?.username || "VenueVibe User",
-        email: user?.email || "",
-        userType: "client",
-        source: "messages_page",
-      });
-
-      // Open the chat widget
-      window.Tawk_API.showWidget();
-      window.Tawk_API.maximize();
-
-      toast.success("Chat opened! Our support team will assist you.");
-    } else {
-      toast.error("Chat is not available right now. Please try again later.");
+  const getMessageIcon = (type) => {
+    switch (type) {
+      case "whatsapp":
+        return <Phone className="message-icon whatsapp" size={20} />;
+      case "email":
+        return <Mail className="message-icon email" size={20} />;
+      case "system":
+        return <MessageSquare className="message-icon system" size={20} />;
+      default:
+        return <MessageSquare className="message-icon" size={20} />;
     }
   };
 
-  const sendQuickMessage = (message) => {
-    if (window.Tawk_API && isTawkLoaded) {
-      // Set user attributes
-      window.Tawk_API.setAttributes({
-        name: user?.username || "VenueVibe User",
-        email: user?.email || "",
-        userType: "client",
-        source: "messages_page",
-        quickMessage: message,
-      });
-
-      // Add an event and open chat
-      window.Tawk_API.addEvent("Quick Inquiry", {
-        message: message,
-        user: user?.username,
-        timestamp: new Date().toISOString(),
-      });
-
-      window.Tawk_API.showWidget();
-      window.Tawk_API.maximize();
-
-      toast.success(
-        "Quick message sent! Chat opened for detailed conversation."
-      );
-    } else {
-      toast.error("Chat is not available right now. Please try again later.");
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "delivered":
+        return <CheckCircle className="status-icon delivered" size={16} />;
+      case "read":
+        return <CheckCircle className="status-icon read" size={16} />;
+      case "unread":
+        return <div className="status-icon unread"></div>;
+      default:
+        return null;
     }
   };
+
+  const formatTimestamp = (timestamp) => {
+    const now = new Date();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return timestamp.toLocaleDateString();
+  };
+
+  const filteredMessages = messages.filter((message) => {
+    if (activeTab === "all") return true;
+    return message.type === activeTab;
+  });
+
+  if (loading) {
+    return (
+      <div className="messages-page">
+        <div className="messages-container">
+          <div className="loading-spinner">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <p>Loading your messages...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="messages-page">
       <div className="messages-container">
+        {/* Header */}
         <div className="messages-header">
-          <h1 className="messages-title">
-            <MessageSquare className="text-indigo-600" size={32} />
-            Support & Messages
-          </h1>
-          <p className="messages-subtitle">
-            Get help with viewings, property inquiries, and support
-          </p>
+          <div className="header-content">
+            <MessageSquare className="header-icon" size={32} />
+            <div>
+              <h1 className="page-title">Messages & Conversations</h1>
+              <p className="page-subtitle">
+                Track all your communications with Victor Springs
+              </p>
+            </div>
+          </div>
         </div>
 
+        {/* Tabs */}
+        <div className="messages-tabs">
+          <button
+            className={`tab-button ${activeTab === "all" ? "active" : ""}`}
+            onClick={() => setActiveTab("all")}
+          >
+            All Messages ({messages.length})
+          </button>
+          <button
+            className={`tab-button ${activeTab === "whatsapp" ? "active" : ""}`}
+            onClick={() => setActiveTab("whatsapp")}
+          >
+            WhatsApp ({messages.filter((m) => m.type === "whatsapp").length})
+          </button>
+          <button
+            className={`tab-button ${activeTab === "email" ? "active" : ""}`}
+            onClick={() => setActiveTab("email")}
+          >
+            Email ({messages.filter((m) => m.type === "email").length})
+          </button>
+          <button
+            className={`tab-button ${activeTab === "system" ? "active" : ""}`}
+            onClick={() => setActiveTab("system")}
+          >
+            System ({messages.filter((m) => m.type === "system").length})
+          </button>
+        </div>
+
+        {/* Messages List */}
         <div className="messages-content">
-          {/* Chat Status */}
-          <div className="messages-status">
-            <div
-              className={`messages-status-indicator ${
-                isTawkLoaded ? "online" : "offline"
-              }`}
-            >
-              <div className="messages-status-dot"></div>
-              <span>
-                {isTawkLoaded ? "Live Chat Available" : "Chat Loading..."}
-              </span>
+          {filteredMessages.length === 0 ? (
+            <div className="empty-state">
+              <MessageSquare className="empty-icon" size={64} />
+              <h3 className="empty-title">No messages yet</h3>
+              <p className="empty-subtitle">
+                Your messages and conversation history will appear here
+              </p>
             </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="messages-quick-actions">
-            <h3 className="messages-section-title">Quick Help</h3>
-            <div className="messages-action-grid">
-              <button
-                onClick={() => sendQuickMessage("I need help with a booking")}
-                className="messages-action-button"
-              >
-                <MessageSquare size={20} />
-                <span>Booking Help</span>
-              </button>
-
-              <button
-                onClick={() =>
-                  sendQuickMessage("I have questions about a property")
-                }
-                className="messages-action-button"
-              >
-                <ExternalLink size={20} />
-                <span>Venue Questions</span>
-              </button>
-
-              <button
-                onClick={() => sendQuickMessage("I need to modify my booking")}
-                className="messages-action-button"
-              >
-                <User size={20} />
-                <span>Modify Booking</span>
-              </button>
-
-              <button
-                onClick={() => sendQuickMessage("I have a general inquiry")}
-                className="messages-action-button"
-              >
-                <Send size={20} />
-                <span>General Inquiry</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Contact Information */}
-          <div className="messages-contact">
-            <h3 className="messages-section-title">Alternative Contact</h3>
-            <div className="messages-contact-grid">
-              <div className="messages-contact-item">
-                <Phone className="messages-contact-icon" size={20} />
-                <div>
-                  <p className="messages-contact-label">Phone Support</p>
-                  <p className="messages-contact-value">+254 700 000 000</p>
+          ) : (
+            <div className="messages-list">
+              {filteredMessages.map((message) => (
+                <div key={message.id} className="message-card">
+                  <div className="message-header">
+                    <div className="message-sender">
+                      {getMessageIcon(message.type)}
+                      <div>
+                        <h4 className="sender-name">{message.sender}</h4>
+                        <p className="message-subject">{message.subject}</p>
+                      </div>
+                    </div>
+                    <div className="message-meta">
+                      {getStatusIcon(message.status)}
+                      <span className="timestamp">
+                        {formatTimestamp(message.timestamp)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="message-content">
+                    <p>{message.message}</p>
+                  </div>
+                  <div className="message-actions">
+                    <button className="action-button reply">
+                      <MessageSquare size={16} />
+                      Reply
+                    </button>
+                    <button className="action-button mark-read">
+                      {message.status === "unread"
+                        ? "Mark as Read"
+                        : "Mark as Unread"}
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="messages-contact-item">
-                <Mail className="messages-contact-icon" size={20} />
-                <div>
-                  <p className="messages-contact-label">Email Support</p>
-                  <p className="messages-contact-value">
-                    support@victorsprings.co.ke
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Open Full Chat */}
-          <div className="messages-full-chat">
-            <button
-              onClick={openTawkChat}
-              className="messages-full-chat-button"
-              disabled={!isTawkLoaded}
-            >
-              <MessageSquare size={20} />
-              <span>Open Live Chat</span>
-              <ExternalLink size={16} />
+        {/* Footer */}
+        <div className="page-footer">
+          <p>
+            Need help? Contact us through WhatsApp or email for immediate
+            assistance.
+          </p>
+          <div className="footer-actions">
+            <button className="footer-button whatsapp">
+              <Phone size={18} />
+              Start WhatsApp Chat
             </button>
-            <p className="messages-full-chat-note">
-              Start a conversation with our support team for personalized
-              assistance
-            </p>
+            <button className="footer-button email">
+              <Mail size={18} />
+              Send Email
+            </button>
           </div>
         </div>
       </div>

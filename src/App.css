@@ -1,5 +1,6 @@
 #root {
   /* Removed max-width, margin, padding, and text-align to allow full width */
+  overflow-x: hidden;
 }
 
 .logo {

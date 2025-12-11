@@ -12,7 +12,10 @@ const ProtectedRoute = ({ allowedRoles }) => {
         return <Navigate to="/login" replace />;
     }
 
-    if (!allowedRoles.includes(user.role)) {
+    // Map "tenant" role to "Client" for backward compatibility
+    const userRole = user.role === "tenant" ? "Client" : user.role;
+
+    if (!allowedRoles.includes(userRole)) {
         // Logged in but wrong role? Send home.
         return <Navigate to="/" replace />;
     }

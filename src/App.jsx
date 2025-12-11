@@ -7,7 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 // Components
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import WhatsAppFloat from "./components/WhatsAppFloat";
+import WhatsAppChatWidget from "./components/WhatsAppChatWidget";
 import ProtectedRoute from "./components/ProtectedRoute";
 import TawkToChat from "./components/TawkToChat";
 
@@ -22,13 +22,20 @@ const Register = lazy(() => import("./pages/public/Register"));
 const GoogleCallback = lazy(() => import("./pages/public/GoogleCallback"));
 
 const ClientDashboard = lazy(() => import("./pages/client/ClientDashboard"));
-const MyBookings = lazy(() => import("./pages/client/MyBookings"));
-const SavedVenues = lazy(() => import("./pages/client/SavedVenues"));
+const MyInterests = lazy(() => import("./pages/client/MyInterests"));
+const Messages = lazy(() => import("./pages/client/Messages"));
 const AccountSettings = lazy(() => import("./pages/client/AccountSettings"));
 const ProfileEdit = lazy(() => import("./pages/client/ProfileEdit"));
-const Messages = lazy(() => import("./pages/client/Messages"));
-const Invoices = lazy(() => import("./pages/client/Invoices"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const CommunicationSettings = lazy(() =>
+  import("./pages/admin/CommunicationSettings")
+);
+const NotificationManager = lazy(() =>
+  import("./pages/admin/NotificationManager")
+);
+const MessageTemplates = lazy(() => import("./pages/admin/MessageTemplates"));
+const PropertyInterests = lazy(() => import("./pages/admin/PropertyInterests"));
+const Activity = lazy(() => import("./pages/admin/Activity"));
 
 // Component to handle page padding
 function PageWrapper({ children }) {
@@ -70,20 +77,36 @@ function App() {
               <Route
                 element={<ProtectedRoute allowedRoles={["Client", "Admin"]} />}
               >
-                <Route path="/dashboard/bookings" element={<MyBookings />} />
-                <Route path="/dashboard/saved" element={<SavedVenues />} />
+                <Route path="/dashboard" element={<ClientDashboard />} />
+                <Route path="/dashboard/messages" element={<Messages />} />
+                <Route path="/dashboard/interests" element={<MyInterests />} />
                 <Route
                   path="/dashboard/settings"
                   element={<AccountSettings />}
                 />
                 <Route path="/profile/edit" element={<ProfileEdit />} />
-                <Route path="/dashboard/messages" element={<Messages />} />
-                <Route path="/dashboard/invoices" element={<Invoices />} />
               </Route>
 
               {/* GOD MODE (Admin Only) */}
               <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
-                <Route path="/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route
+                  path="/admin/communication"
+                  element={<CommunicationSettings />}
+                />
+                <Route
+                  path="/admin/notifications"
+                  element={<NotificationManager />}
+                />
+                <Route
+                  path="/admin/message-templates"
+                  element={<MessageTemplates />}
+                />
+                <Route
+                  path="/admin/property-interests"
+                  element={<PropertyInterests />}
+                />
+                <Route path="/admin/activity" element={<Activity />} />
                 <Route path="/admin/*" element={<AdminDashboard />} />
               </Route>
             </Routes>
@@ -92,10 +115,11 @@ function App() {
 
         {/* Footer */}
         <Footer />
-        {/* Global Floating WhatsApp Button */}
-        <WhatsAppFloat />
 
-        {/* Tawk.to Chat Widget */}
+        {/* WhatsApp Chat Widget (with Tawk.to fallback) */}
+        <WhatsAppChatWidget />
+
+        {/* Tawk.to Chat Widget (fallback) */}
         <TawkToChat />
       </AuthProvider>
     </BrowserRouter>

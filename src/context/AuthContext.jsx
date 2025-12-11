@@ -10,12 +10,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     console.log("AuthContext: Initializing auth check");
     const token = localStorage.getItem("token");
+    const refreshToken = localStorage.getItem("refresh_token");
     const role = localStorage.getItem("role");
     const userId = localStorage.getItem("user_id");
 
     console.log(
       "AuthContext: Stored values - token:",
       !!token,
+      "refresh_token:",
+      !!refreshToken,
       "role:",
       role,
       "userId:",
@@ -26,18 +29,21 @@ export const AuthProvider = ({ children }) => {
       try {
         const decoded = jwtDecode(token);
         console.log("AuthContext: Decoded token:", decoded);
-        // Check expiry
+        console.log("AuthContext: Current time:", Date.now());
+        console.log("AuthContext: Token expiry:", decoded.exp * 1000);
+        // Check expiry - if access token is expired, we'll let the axios interceptor handle refresh
         if (decoded.exp * 1000 < Date.now()) {
-          console.log("AuthContext: Token expired, logging out");
-          logout();
-        } else {
-          console.log("AuthContext: Token valid, setting user");
-          setUser({
-            username: "User", // We'll get the real username from /users/me
-            role: role,
-            id: userId,
-          });
+          console.log(
+            "AuthContext: Access token expired, but keeping session for refresh"
+          );
+          // Don't logout immediately - axios interceptor will handle refresh
         }
+        console.log("AuthContext: Token valid, setting user");
+        setUser({
+          username: "User", // We'll get the real username from /users/me
+          role: role,
+          id: userId,
+        });
       } catch (e) {
         console.log("AuthContext: Token decode failed:", e);
         // Only logout if we don't already have a user (prevent HMR clearing valid sessions)
@@ -55,8 +61,11 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []); // Keep empty dependency array to only run on mount
 
-  const login = useCallback((token, role, id) => {
+  const login = useCallback((token, refreshToken, role, id) => {
     localStorage.setItem("token", token);
+    if (refreshToken) {
+      localStorage.setItem("refresh_token", refreshToken);
+    }
     localStorage.setItem("role", role);
     localStorage.setItem("user_id", id);
     setUser({ username: "User", role, id }); // Username will be updated when we fetch user data

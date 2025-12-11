@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import api from "../../api/axios";
 import { toast } from "react-toastify";
@@ -17,11 +18,13 @@ import {
   Eye,
   Download,
   Plus,
+  Heart,
 } from "lucide-react";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [reports, setReports] = useState(null);
   const [venues, setVenues] = useState([]);
@@ -235,6 +238,7 @@ const AdminDashboard = () => {
     { id: "users", label: "Users", icon: Users },
     { id: "bookings", label: "Bookings", icon: Calendar },
     { id: "reviews", label: "Reviews", icon: MessageSquare },
+    { id: "property-interests", label: "Property Interests", icon: Heart },
     { id: "communications", label: "Communications", icon: FileText },
   ];
 
@@ -494,6 +498,21 @@ const AdminDashboard = () => {
                     </small>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "property-interests" && (
+            <div className="property-interests-section">
+              <div className="redirect-message">
+                <h2>Property Interests Management</h2>
+                <p>Manage property interests from both signed-in users and guests.</p>
+                <button
+                  className="btn-primary"
+                  onClick={() => navigate('/admin/property-interests')}
+                >
+                  Go to Property Interests Page
+                </button>
               </div>
             </div>
           )}
