@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import api from "../api/axios";
 import {
   Menu,
   X,
@@ -22,6 +23,11 @@ const Navbar = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [profileData, setProfileData] = useState({
+    username: '',
+    email: '',
+    phone: ''
+  });
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -46,6 +52,27 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        try {
+          const res = await api.get('/users/me');
+          const userData = {
+            username: res.data.username || '',
+            email: res.data.email || '',
+            phone: res.data.phone_number || ''
+          };
+          setProfileData(userData);
+        } catch (error) {
+          console.error('Error fetching profile:', error);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -81,11 +108,6 @@ const Navbar = () => {
   // User dropdown menu items
   const userDropdownItems = [
     {
-      path: "/dashboard",
-      label: "Dashboard",
-      icon: User,
-    },
-    {
       path: "/dashboard/interests",
       label: "My Interests",
       icon: Heart,
@@ -96,8 +118,8 @@ const Navbar = () => {
       icon: MessageSquare,
     },
     {
-      path: "/profile/edit",
-      label: "Edit Profile",
+      path: "/dashboard",
+      label: "Account Settings",
       icon: Settings,
     },
   ];
@@ -158,7 +180,7 @@ const Navbar = () => {
                       </div>
                       <div className="navbar-dropdown-info">
                         <div className="navbar-dropdown-name">
-                          {user.first_name || "User"}
+                          {profileData.username || user?.username || 'user'}
                         </div>
                         <div className="navbar-dropdown-role">
                           {userRole}
@@ -230,7 +252,7 @@ const Navbar = () => {
               </div>
               <div className="navbar-mobile-user-info">
                 <div className="navbar-user-greeting mobile">
-                  Hi, {user.first_name || "User"}
+                  Hi, {profileData.username || user?.username || 'user'}
                 </div>
                 <div className="navbar-user-role">
                   {userRole}

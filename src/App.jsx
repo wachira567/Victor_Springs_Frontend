@@ -25,7 +25,6 @@ const ClientDashboard = lazy(() => import("./pages/client/ClientDashboard"));
 const MyInterests = lazy(() => import("./pages/client/MyInterests"));
 const Messages = lazy(() => import("./pages/client/Messages"));
 const AccountSettings = lazy(() => import("./pages/client/AccountSettings"));
-const ProfileEdit = lazy(() => import("./pages/client/ProfileEdit"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const CommunicationSettings = lazy(() =>
   import("./pages/admin/CommunicationSettings")
@@ -84,7 +83,6 @@ function App() {
                   path="/dashboard/settings"
                   element={<AccountSettings />}
                 />
-                <Route path="/profile/edit" element={<ProfileEdit />} />
               </Route>
 
               {/* GOD MODE (Admin Only) */}

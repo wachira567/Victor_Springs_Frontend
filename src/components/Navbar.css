@@ -87,6 +87,10 @@
   background-color: rgba(79, 70, 229, 0.05);
 }
 
+.navbar-user-dropdown:hover .navbar-user-button {
+  background-color: rgba(79, 70, 229, 0.05);
+}
+
 .navbar-user-avatar {
   width: 36px;
   height: 36px;

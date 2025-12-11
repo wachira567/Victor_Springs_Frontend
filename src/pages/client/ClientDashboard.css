@@ -6,13 +6,27 @@
 }
 
 .dashboard-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: url('https://res.cloudinary.com/dtbe44muv/image/upload/v1765480750/bg_06_xms15k.jpg') center/cover no-repeat;
   color: white;
   padding: 3rem 2rem;
   border-radius: 16px;
   margin-bottom: 2rem;
   box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
 }
+
+.dashboard-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  pointer-events: none;
+}
+
 
 .dashboard-welcome {
   display: flex;
@@ -26,16 +40,22 @@
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  background: linear-gradient(45deg, #ffffff, #e0e7ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: white;
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    0 8px 16px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 2;
 }
 
 .welcome-text p {
   font-size: 1.1rem;
-  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   margin: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .stats-grid {
@@ -45,13 +65,15 @@
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 12px;
   padding: 1.5rem;
   text-align: center;
   transition: transform 0.3s ease;
+  position: relative;
+  z-index: 2;
 }
 
 .stat-card:hover {
@@ -63,11 +85,14 @@
   font-weight: 700;
   margin-bottom: 0.5rem;
   display: block;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .stat-label {
   font-size: 0.9rem;
-  opacity: 0.8;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   margin: 0;
 }
 
@@ -250,19 +275,36 @@
   gap: 1.5rem;
 }
 
+.visit-card,
 .booking-card,
 .saved-card {
-  background: #f9fafb;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 12px;
   padding: 1.5rem;
-  border: 1px solid #f3f4f6;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
+.visit-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  border-radius: 12px 12px 0 0;
+}
+
+.visit-card:hover,
 .booking-card:hover,
 .saved-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #d1d5db;
+  transform: translateY(-1px);
 }
 
 .booking-header {
@@ -361,6 +403,11 @@
   font-weight: 600;
   color: #1f2937;
   margin: 0;
+}
+
+.saved-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .saved-price {
@@ -548,6 +595,16 @@ input:checked + .toggle-slider:before {
   transform: translateX(20px);
 }
 
+.toggle-slider.disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.preference-item.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .danger-zone {
   background: #fef2f2;
   border: 1px solid #fecaca;
@@ -577,6 +634,59 @@ input:checked + .toggle-slider:before {
 .btn-danger:hover {
   background: #b91c1c;
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+
+/* Action Buttons */
+.btn-icon {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.btn-view {
+  background: #10b981;
+  color: white;
+}
+
+.btn-view:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.btn-delete {
+  background: #dc2626;
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.interest-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.visit-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
 }
 
 /* Responsive Design */
