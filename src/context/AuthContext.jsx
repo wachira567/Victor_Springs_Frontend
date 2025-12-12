@@ -1,11 +1,33 @@
 import { createContext, useState, useEffect, useCallback } from "react";
 import { jwtDecode } from "jwt-decode";
+import api from "../api/axios";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Function to fetch and update user data
+  const fetchUserData = useCallback(async () => {
+    if (!user) return;
+    try {
+      const response = await api.get("/users/me");
+      const userData = response.data;
+      console.log("AuthContext: Fetched user data:", userData);
+      setUser({
+        username: userData.first_name || userData.username || "User",
+        role: user.role,
+        id: user.id,
+        email: userData.email,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        phone_number: userData.phone_number,
+      });
+    } catch (error) {
+      console.error("AuthContext: Failed to fetch user data:", error);
+    }
+  }, [user]);
 
   useEffect(() => {
     console.log("AuthContext: Initializing auth check");
@@ -60,6 +82,13 @@ export const AuthProvider = ({ children }) => {
     }
     setLoading(false);
   }, []); // Keep empty dependency array to only run on mount
+
+  // Fetch user data when user is set
+  useEffect(() => {
+    if (user && user.username === "User") {
+      fetchUserData();
+    }
+  }, [user, fetchUserData]);
 
   const login = useCallback((token, refreshToken, role, id) => {
     localStorage.setItem("token", token);

@@ -12,6 +12,7 @@ import {
   Trash2,
   Filter,
 } from "lucide-react";
+import "./PropertyInterests.css";
 
 const PropertyInterests = () => {
   const [interests, setInterests] = useState([]);
@@ -41,7 +42,7 @@ const PropertyInterests = () => {
 
     try {
       await api.delete(`/admin/property-interests/${interestId}`);
-      setInterests(interests.filter(i => i.id !== interestId));
+      setInterests(interests.filter((i) => i.id !== interestId));
       toast.success("Interest deleted successfully");
     } catch (error) {
       console.error("Error deleting interest:", error);
@@ -49,7 +50,7 @@ const PropertyInterests = () => {
     }
   };
 
-  const filteredInterests = interests.filter(interest => {
+  const filteredInterests = interests.filter((interest) => {
     if (filter === "all") return true;
     if (filter === "signed_in") return interest.user_id !== null;
     if (filter === "guests") return interest.guest_id !== null;
@@ -80,7 +81,8 @@ const PropertyInterests = () => {
           <div className="header-content">
             <h1 className="page-title">Property Interests</h1>
             <p className="page-subtitle">
-              Manage property interest requests from both signed-in users and guests
+              Manage property interest requests from both signed-in users and
+              guests
             </p>
           </div>
         </div>
@@ -103,7 +105,7 @@ const PropertyInterests = () => {
             </div>
             <div className="stat-content">
               <h3 className="stat-number">
-                {interests.filter(i => i.user_id !== null).length}
+                {interests.filter((i) => i.user_id !== null).length}
               </h3>
               <p className="stat-label">Signed-in Users</p>
             </div>
@@ -115,7 +117,7 @@ const PropertyInterests = () => {
             </div>
             <div className="stat-content">
               <h3 className="stat-number">
-                {interests.filter(i => i.guest_id !== null).length}
+                {interests.filter((i) => i.guest_id !== null).length}
               </h3>
               <p className="stat-label">Guest Users</p>
             </div>
@@ -137,14 +139,15 @@ const PropertyInterests = () => {
               onClick={() => setFilter("signed_in")}
             >
               <UserCheck size={16} />
-              Signed-in Users ({interests.filter(i => i.user_id !== null).length})
+              Signed-in Users (
+              {interests.filter((i) => i.user_id !== null).length})
             </button>
             <button
               className={`filter-btn ${filter === "guests" ? "active" : ""}`}
               onClick={() => setFilter("guests")}
             >
               <Users size={16} />
-              Guests ({interests.filter(i => i.guest_id !== null).length})
+              Guests ({interests.filter((i) => i.guest_id !== null).length})
             </button>
           </div>
         </div>
@@ -192,7 +195,9 @@ const PropertyInterests = () => {
 
                   <div className="interest-content">
                     <div className="interest-main">
-                      <h3 className="property-name">{interest.property_name}</h3>
+                      <h3 className="property-name">
+                        {interest.property_name}
+                      </h3>
                       <p className="unit-type">{interest.unit_type_name}</p>
 
                       <div className="contact-info">
@@ -213,7 +218,10 @@ const PropertyInterests = () => {
                       <div className="interest-details">
                         <div className="detail-item">
                           <Calendar size={16} />
-                          <span>Notify within: {getTimeframeText(interest.timeframe_months)}</span>
+                          <span>
+                            Notify within:{" "}
+                            {getTimeframeText(interest.timeframe_months)}
+                          </span>
                         </div>
                         {interest.guest_id && (
                           <div className="detail-item">
@@ -233,7 +241,8 @@ const PropertyInterests = () => {
 
                     <div className="interest-footer">
                       <span className="created-date">
-                        Created: {new Date(interest.created_at).toLocaleDateString()}
+                        Created:{" "}
+                        {new Date(interest.created_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
