@@ -42,20 +42,20 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [reports, setReports] = useState(null);
-  const [venues, setVenues] = useState([]);
+  const [properties, setProperties] = useState([]);
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showVenueModal, setShowVenueModal] = useState(false);
-  const [editingVenue, setEditingVenue] = useState(null);
-  const [venueForm, setVenueForm] = useState({
+  const [showPropertyModal, setShowPropertyModal] = useState(false);
+  const [editingProperty, setEditingProperty] = useState(null);
+  const [propertyForm, setPropertyForm] = useState({
     name: "",
-    location: "",
-    capacity: "",
-    price_per_day: "",
-    category: "",
-    description: "",
-    image_url: "",
+    address: "",
+    city: "",
+    neighborhood: "",
+    has_parking: false,
+    has_security: false,
+    has_borehole: false,
   });
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -96,8 +96,8 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeTab === "dashboard") {
       fetchReports();
-    } else if (activeTab === "venues") {
-      fetchVenues();
+    } else if (activeTab === "properties") {
+      fetchProperties();
     } else if (activeTab === "users") {
       fetchUsers();
     } else if (activeTab === "bookings") {
@@ -127,12 +127,12 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchVenues = async () => {
+  const fetchProperties = async () => {
     try {
-      const res = await api.get("/admin/venues");
-      setVenues(res.data);
+      const res = await api.get("/properties");
+      setProperties(res.data);
     } catch (error) {
-      toast.error("Failed to load venues");
+      toast.error("Failed to load properties");
     }
   };
 
@@ -392,26 +392,27 @@ const AdminDashboard = () => {
     }
   };
 
-  const deleteVenue = async (venueId) => {
-    if (!window.confirm("Are you sure you want to delete this venue?")) return;
+  const deleteProperty = async (propertyId) => {
+    if (!window.confirm("Are you sure you want to delete this property?"))
+      return;
     try {
-      await api.delete(`/venues/${venueId}`);
-      setVenues(venues.filter((v) => v.id !== venueId));
-      toast.success("Venue deleted");
+      await api.delete(`/properties/${propertyId}`);
+      setProperties(properties.filter((p) => p.id !== propertyId));
+      toast.success("Property deleted");
     } catch (error) {
-      toast.error("Failed to delete venue");
+      toast.error("Failed to delete property");
     }
   };
 
-  const updateVenue = async (venueId, updates) => {
+  const updateProperty = async (propertyId, updates) => {
     try {
-      await api.put(`/venues/${venueId}`, updates);
-      setVenues(
-        venues.map((v) => (v.id === venueId ? { ...v, ...updates } : v))
+      await api.put(`/properties/${propertyId}`, updates);
+      setProperties(
+        properties.map((p) => (p.id === propertyId ? { ...p, ...updates } : p))
       );
-      toast.success("Venue updated");
+      toast.success("Property updated");
     } catch (error) {
-      toast.error("Failed to update venue");
+      toast.error("Failed to update property");
     }
   };
 
@@ -445,32 +446,32 @@ const AdminDashboard = () => {
     }
   };
 
-  const openAddVenueModal = () => {
-    setEditingVenue(null);
-    setVenueForm({
+  const openAddPropertyModal = () => {
+    setEditingProperty(null);
+    setPropertyForm({
       name: "",
-      location: "",
-      capacity: "",
-      price_per_day: "",
-      category: "",
-      description: "",
-      image_url: "",
+      address: "",
+      city: "",
+      neighborhood: "",
+      has_parking: false,
+      has_security: false,
+      has_borehole: false,
     });
-    setShowVenueModal(true);
+    setShowPropertyModal(true);
   };
 
-  const openEditVenueModal = (venue) => {
-    setEditingVenue(venue);
-    setVenueForm({
-      name: venue.name,
-      location: venue.location,
-      capacity: venue.capacity,
-      price_per_day: venue.price_per_day,
-      category: venue.category,
-      description: venue.description,
-      image_url: venue.image_url,
+  const openEditPropertyModal = (property) => {
+    setEditingProperty(property);
+    setPropertyForm({
+      name: property.name,
+      address: property.address,
+      city: property.city,
+      neighborhood: property.neighborhood,
+      has_parking: property.has_parking,
+      has_security: property.has_security,
+      has_borehole: property.has_borehole,
     });
-    setShowVenueModal(true);
+    setShowPropertyModal(true);
   };
 
   const handleImageUpload = async (file) => {
@@ -492,24 +493,24 @@ const AdminDashboard = () => {
     }
   };
 
-  const saveVenue = async () => {
+  const saveProperty = async () => {
     try {
-      if (editingVenue) {
-        await updateVenue(editingVenue.id, venueForm);
+      if (editingProperty) {
+        await updateProperty(editingProperty.id, propertyForm);
       } else {
-        await api.post("/venues", venueForm);
-        fetchVenues(); // Refresh list
-        toast.success("Venue added");
+        await api.post("/properties", propertyForm);
+        fetchProperties(); // Refresh list
+        toast.success("Property added");
       }
-      setShowVenueModal(false);
+      setShowPropertyModal(false);
     } catch (error) {
-      toast.error("Failed to save venue");
+      toast.error("Failed to save property");
     }
   };
 
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-    { id: "venues", label: "Venues", icon: Building },
+    { id: "properties", label: "Properties", icon: Building },
     { id: "users", label: "Users", icon: Users },
     { id: "bookings", label: "Bookings", icon: Calendar },
     { id: "property-interests", label: "Property Interests", icon: Heart },
@@ -591,13 +592,13 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {activeTab === "venues" && (
-            <div className="venues-section">
+          {activeTab === "properties" && (
+            <div className="properties-section">
               <div className="section-header">
-                <h2>Manage Venues</h2>
-                <button className="btn-add" onClick={openAddVenueModal}>
+                <h2>Manage Properties</h2>
+                <button className="btn-add" onClick={openAddPropertyModal}>
                   <Plus size={16} />
-                  Add Venue
+                  Add Property
                 </button>
               </div>
               <div className="data-table">
@@ -606,28 +607,44 @@ const AdminDashboard = () => {
                     <tr>
                       <th>Name</th>
                       <th>Location</th>
-                      <th>Capacity</th>
-                      <th>Price/Day</th>
+                      <th>Units</th>
+                      <th>Features</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {venues.map((venue) => (
-                      <tr key={venue.id}>
-                        <td>{venue.name}</td>
-                        <td>{venue.location}</td>
-                        <td>{venue.capacity}</td>
-                        <td>KES {venue.price_per_day.toLocaleString()}</td>
+                    {properties.map((property) => (
+                      <tr
+                        key={property.id}
+                        onClick={() => navigate(`/admin/properties/${property.id}`)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>{property.name}</td>
                         <td>
+                          {property.city}, {property.neighborhood}
+                        </td>
+                        <td>{property.unit_types?.length || 0} units</td>
+                        <td>
+                          {property.has_parking && "Parking "}
+                          {property.has_security && "Security "}
+                          {property.has_borehole && "Borehole"}
+                        </td>
+                        <td onClick={(e) => e.stopPropagation()}>
                           <button
                             className="btn-edit"
-                            onClick={() => openEditVenueModal(venue)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditPropertyModal(property);
+                            }}
                           >
                             <Edit size={16} />
                           </button>
                           <button
                             className="btn-delete"
-                            onClick={() => deleteVenue(venue.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteProperty(property.id);
+                            }}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -2004,15 +2021,18 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Venue Modal */}
-      {showVenueModal && (
-        <div className="modal-overlay" onClick={() => setShowVenueModal(false)}>
+      {/* Property Modal */}
+      {showPropertyModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowPropertyModal(false)}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editingVenue ? "Edit Venue" : "Add New Venue"}</h3>
+              <h3>{editingProperty ? "Edit Property" : "Add New Property"}</h3>
               <button
                 className="modal-close"
-                onClick={() => setShowVenueModal(false)}
+                onClick={() => setShowPropertyModal(false)}
               >
                 ×
               </button>
@@ -2021,117 +2041,111 @@ const AdminDashboard = () => {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  saveVenue();
+                  saveProperty();
                 }}
               >
                 <div className="form-group">
                   <label>Name</label>
                   <input
                     type="text"
-                    value={venueForm.name}
+                    value={propertyForm.name}
                     onChange={(e) =>
-                      setVenueForm({ ...venueForm, name: e.target.value })
+                      setPropertyForm({ ...propertyForm, name: e.target.value })
                     }
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label>Location</label>
+                  <label>Address</label>
                   <input
                     type="text"
-                    value={venueForm.location}
+                    value={propertyForm.address}
                     onChange={(e) =>
-                      setVenueForm({ ...venueForm, location: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Capacity</label>
-                  <input
-                    type="number"
-                    value={venueForm.capacity}
-                    onChange={(e) =>
-                      setVenueForm({ ...venueForm, capacity: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Price per Day (KES)</label>
-                  <input
-                    type="number"
-                    value={venueForm.price_per_day}
-                    onChange={(e) =>
-                      setVenueForm({
-                        ...venueForm,
-                        price_per_day: e.target.value,
+                      setPropertyForm({
+                        ...propertyForm,
+                        address: e.target.value,
                       })
                     }
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label>Category</label>
-                  <select
-                    value={venueForm.category}
+                  <label>City</label>
+                  <input
+                    type="text"
+                    value={propertyForm.city}
                     onChange={(e) =>
-                      setVenueForm({ ...venueForm, category: e.target.value })
+                      setPropertyForm({ ...propertyForm, city: e.target.value })
                     }
                     required
-                  >
-                    <option value="">Select Category</option>
-                    <option value="Wedding Venues">Wedding Venues</option>
-                    <option value="Conference Halls">Conference Halls</option>
-                    <option value="Garden Parties">Garden Parties</option>
-                    <option value="Beach Resorts">Beach Resorts</option>
-                    <option value="Corporate Events">Corporate Events</option>
-                  </select>
+                  />
                 </div>
                 <div className="form-group">
-                  <label>Description</label>
-                  <textarea
-                    value={venueForm.description}
+                  <label>Neighborhood</label>
+                  <input
+                    type="text"
+                    value={propertyForm.neighborhood}
                     onChange={(e) =>
-                      setVenueForm({
-                        ...venueForm,
-                        description: e.target.value,
+                      setPropertyForm({
+                        ...propertyForm,
+                        neighborhood: e.target.value,
                       })
                     }
-                    rows="4"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Image</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={async (e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const url = await handleImageUpload(file);
-                        setVenueForm({ ...venueForm, image_url: url });
-                      }
-                    }}
-                  />
-                  {uploadingImage && <p>Uploading...</p>}
-                  {venueForm.image_url && (
-                    <img
-                      src={venueForm.image_url}
-                      alt="Preview"
-                      style={{ width: "100px" }}
-                    />
-                  )}
+                  <label>Features</label>
+                  <div className="checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={propertyForm.has_parking}
+                        onChange={(e) =>
+                          setPropertyForm({
+                            ...propertyForm,
+                            has_parking: e.target.checked,
+                          })
+                        }
+                      />
+                      Parking
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={propertyForm.has_security}
+                        onChange={(e) =>
+                          setPropertyForm({
+                            ...propertyForm,
+                            has_security: e.target.checked,
+                          })
+                        }
+                      />
+                      Security
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={propertyForm.has_borehole}
+                        onChange={(e) =>
+                          setPropertyForm({
+                            ...propertyForm,
+                            has_borehole: e.target.checked,
+                          })
+                        }
+                      />
+                      Borehole
+                    </label>
+                  </div>
                 </div>
                 <div className="modal-actions">
                   <button
                     type="button"
-                    onClick={() => setShowVenueModal(false)}
+                    onClick={() => setShowPropertyModal(false)}
                   >
                     Cancel
                   </button>
                   <button type="submit">
-                    {editingVenue ? "Update" : "Add"} Venue
+                    {editingProperty ? "Update" : "Add"} Property
                   </button>
                 </div>
               </form>

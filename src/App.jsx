@@ -33,6 +33,9 @@ const NotificationManager = lazy(() =>
 );
 const MessageTemplates = lazy(() => import("./pages/admin/MessageTemplates"));
 const PropertyInterests = lazy(() => import("./pages/admin/PropertyInterests"));
+const PropertyManagement = lazy(() =>
+  import("./pages/admin/PropertyManagement")
+);
 const Activity = lazy(() => import("./pages/admin/Activity"));
 
 // Component to handle page padding
@@ -86,6 +89,10 @@ function App() {
               {/* GOD MODE (Admin Only) */}
               <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route
+                  path="/admin/properties/:id"
+                  element={<PropertyManagement />}
+                />
                 <Route
                   path="/admin/communication"
                   element={<CommunicationSettings />}

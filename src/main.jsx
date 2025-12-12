@@ -18,6 +18,9 @@ import "./pages/public/Register.css";
 import "./pages/public/PropertyDetails.css";
 import "./pages/public/VenueList.css";
 
+// Mapbox CSS
+import "mapbox-gl/dist/mapbox-gl.css";
+
 // Preload admin page CSS
 import "./pages/admin/AdminDashboard.css";
 import "./pages/admin/Activity.css";
