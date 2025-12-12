@@ -11,7 +11,6 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
-import "./MyInterests.css";
 
 const MyInterests = () => {
   const { user } = useContext(AuthContext);

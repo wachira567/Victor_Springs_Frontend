@@ -23,7 +23,6 @@ const GoogleCallback = lazy(() => import("./pages/public/GoogleCallback"));
 
 const ClientDashboard = lazy(() => import("./pages/client/ClientDashboard"));
 const MyInterests = lazy(() => import("./pages/client/MyInterests"));
-const Messages = lazy(() => import("./pages/client/Messages"));
 const AccountSettings = lazy(() => import("./pages/client/AccountSettings"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const CommunicationSettings = lazy(() =>
@@ -77,7 +76,6 @@ function App() {
                 element={<ProtectedRoute allowedRoles={["Client", "Admin"]} />}
               >
                 <Route path="/dashboard" element={<ClientDashboard />} />
-                <Route path="/dashboard/messages" element={<Messages />} />
                 <Route path="/dashboard/interests" element={<MyInterests />} />
                 <Route
                   path="/dashboard/settings"

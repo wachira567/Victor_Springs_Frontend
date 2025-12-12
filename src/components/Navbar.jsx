@@ -108,17 +108,17 @@ const Navbar = () => {
   // User dropdown menu items
   const userDropdownItems = [
     {
+      path: "/dashboard",
+      label: "Dashboard",
+      icon: User,
+    },
+    {
       path: "/dashboard/interests",
       label: "My Interests",
       icon: Heart,
     },
     {
-      path: "/dashboard/messages",
-      label: "Messages",
-      icon: MessageSquare,
-    },
-    {
-      path: "/dashboard",
+      path: "/dashboard/settings",
       label: "Account Settings",
       icon: Settings,
     },
