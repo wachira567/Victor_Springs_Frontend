@@ -121,6 +121,8 @@ const PropertyManagement = () => {
       if (id) {
         await api.put(`/properties/${id}`, propertyForm);
         toast.success("Property updated successfully");
+        // Update local state immediately for better UX
+        setProperty({ ...property, ...propertyForm });
       } else {
         const response = await api.post("/properties", propertyForm);
         toast.success("Property created successfully");
