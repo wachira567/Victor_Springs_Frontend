@@ -947,13 +947,10 @@ Victor Springs Team
                         <td>
                           <div>
                             <div className="font-semibold">
-                              {visit.contact_name}
+                              {visit.contact_display || visit.contact_name}
                             </div>
                             <div className="text-sm text-gray-600">
                               {visit.contact_email}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {visit.contact_phone}
                             </div>
                           </div>
                         </td>
