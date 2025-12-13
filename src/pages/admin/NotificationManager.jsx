@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import api from "../../api/axios";
 import { toast } from "react-toastify";
+import "./NotificationManager.css";
 
 const NotificationManager = () => {
   const [bookings, setBookings] = useState([]);
@@ -27,7 +28,6 @@ const NotificationManager = () => {
   const loadBookings = async () => {
     try {
       setLoading(true);
-      // This would need a new endpoint to get bookings with user phone numbers
       const response = await api.get("/admin/bookings-with-phones");
       setBookings(response.data);
     } catch (error) {
@@ -129,155 +129,253 @@ const NotificationManager = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Notification Manager
-        </h1>
-        <p className="text-gray-600">
-          Manage automated notifications, reminders, and confirmations for
-          bookings
-        </p>
-      </div>
-
-      {/* Bookings Management */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Bell className="text-indigo-600" size={24} />
-          <div>
-            <h2 className="text-xl font-semibold">Booking Notifications</h2>
-            <p className="text-sm text-gray-600">
-              Send automated notifications to booking customers
-            </p>
+    <div className="notification-manager-page">
+      <div className="notification-manager-container">
+        {/* Header */}
+        <div className="page-header">
+          <div className="header-content">
+            <div className="header-icon">
+              <Bell size={32} />
+            </div>
+            <div className="header-text">
+              <h1 className="page-title">Notification Manager</h1>
+              <p className="page-subtitle">
+                Send automated notifications, reminders, and confirmations to
+                customers
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-4">
-          {bookings.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Calendar size={48} className="mx-auto mb-4 opacity-50" />
-              <p>No bookings found</p>
+        {/* Stats Overview */}
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-icon pending">
+              <Clock size={24} />
             </div>
-          ) : (
-            bookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="border border-gray-200 rounded-lg p-4"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <User size={20} className="text-gray-400" />
-                    <div>
-                      <h3 className="font-semibold">{booking.user_name}</h3>
-                      <p className="text-sm text-gray-600">
-                        {booking.user_email}
-                      </p>
+            <div className="stat-content">
+              <div className="stat-number">
+                {
+                  bookings.filter((b) => b.notification_status === "pending")
+                    .length
+                }
+              </div>
+              <div className="stat-label">Pending Notifications</div>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon confirmed">
+              <CheckCircle size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">
+                {bookings.filter((b) => b.status === "confirmed").length}
+              </div>
+              <div className="stat-label">Confirmed Bookings</div>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon total">
+              <Calendar size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">{bookings.length}</div>
+              <div className="stat-label">Total Bookings</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bookings Management */}
+        <div className="bookings-section">
+          <div className="section-header">
+            <div className="section-icon">
+              <MessageSquare size={24} />
+            </div>
+            <div className="section-content">
+              <h2 className="section-title">Booking Notifications</h2>
+              <p className="section-subtitle">
+                Send automated notifications to booking customers
+              </p>
+            </div>
+            <button
+              onClick={loadBookings}
+              className="refresh-btn"
+              disabled={loading}
+            >
+              <Bell size={16} />
+              Refresh
+            </button>
+          </div>
+
+          <div className="bookings-list">
+            {bookings.length === 0 ? (
+              <div className="empty-state">
+                <Calendar size={64} className="empty-icon" />
+                <h3 className="empty-title">No bookings found</h3>
+                <p className="empty-subtitle">
+                  There are currently no bookings that need notifications
+                </p>
+              </div>
+            ) : (
+              bookings.map((booking) => (
+                <div key={booking.id} className="booking-card">
+                  <div className="booking-header">
+                    <div className="customer-info">
+                      <div className="customer-avatar">
+                        <User size={20} />
+                      </div>
+                      <div className="customer-details">
+                        <h3 className="customer-name">{booking.user_name}</h3>
+                        <p className="customer-email">{booking.user_email}</p>
+                      </div>
+                    </div>
+                    <div className="booking-meta">
+                      {getStatusBadge(booking.notification_status)}
+                      <span className="booking-date">
+                        {new Date(
+                          booking.appointment_date
+                        ).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(booking.notification_status)}
-                    <span className="text-sm text-gray-500">
-                      {new Date(booking.appointment_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                    <Phone size={14} />
-                    {booking.user_phone}
+                  <div className="booking-details">
+                    <div className="detail-item">
+                      <Phone size={16} />
+                      <span>{booking.user_phone}</span>
+                    </div>
+                    <div className="detail-item">
+                      <Mail size={16} />
+                      <span>
+                        {booking.property_name} - {booking.unit_type}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                    <Mail size={14} />
-                    {booking.property_name} - {booking.unit_type}
-                  </div>
-                </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {getNotificationOptions(booking).map((option) => (
-                    <button
-                      key={option.type}
-                      onClick={() => {
-                        if (option.type === "custom") {
-                          setSelectedBooking(booking);
-                          setNotificationType("custom");
-                        } else {
-                          sendNotification(booking.id, option.type);
-                        }
-                      }}
-                      className={`bg-${option.color}-600 hover:bg-${option.color}-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm`}
-                    >
-                      <option.icon size={14} />
-                      {option.label}
-                    </button>
-                  ))}
+                  <div className="booking-actions">
+                    {getNotificationOptions(booking).map((option) => (
+                      <button
+                        key={option.type}
+                        onClick={() => {
+                          if (option.type === "custom") {
+                            setSelectedBooking(booking);
+                            setNotificationType("custom");
+                          } else {
+                            sendNotification(booking.id, option.type);
+                          }
+                        }}
+                        className={`action-btn ${option.color}`}
+                      >
+                        <option.icon size={16} />
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Custom Message Modal */}
-      {selectedBooking && notificationType === "custom" && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">Send Custom Message</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              To: {selectedBooking.user_name} ({selectedBooking.user_phone})
-            </p>
-            <textarea
-              value={customMessage}
-              onChange={(e) => setCustomMessage(e.target.value)}
-              placeholder="Enter your custom message..."
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-4"
-              rows={4}
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setSelectedBooking(null);
-                  setCustomMessage("");
-                }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  sendNotification(selectedBooking.id, "custom", customMessage);
-                  setSelectedBooking(null);
-                  setCustomMessage("");
-                }}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-              >
-                <Send size={16} />
-                Send Message
-              </button>
+        {/* Custom Message Modal */}
+        {selectedBooking && notificationType === "custom" && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3 className="modal-title">Send Custom Message</h3>
+                <button
+                  onClick={() => {
+                    setSelectedBooking(null);
+                    setCustomMessage("");
+                  }}
+                  className="modal-close"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="recipient-info">
+                  <User size={20} />
+                  <span>To: {selectedBooking.user_name}</span>
+                  <Phone size={16} />
+                  <span>{selectedBooking.user_phone}</span>
+                </div>
+                <textarea
+                  value={customMessage}
+                  onChange={(e) => setCustomMessage(e.target.value)}
+                  placeholder="Enter your custom message..."
+                  className="message-input"
+                  rows={4}
+                />
+              </div>
+              <div className="modal-footer">
+                <button
+                  onClick={() => {
+                    setSelectedBooking(null);
+                    setCustomMessage("");
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    sendNotification(
+                      selectedBooking.id,
+                      "custom",
+                      customMessage
+                    );
+                    setSelectedBooking(null);
+                    setCustomMessage("");
+                  }}
+                  className="btn-primary"
+                >
+                  <Send size={16} />
+                  Send Message
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Info Section */}
-      <div className="mt-8 bg-indigo-50 border border-indigo-200 rounded-lg p-6">
-        <h3 className="font-semibold text-indigo-900 mb-2">
-          Notification Types
-        </h3>
-        <div className="grid md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <h4 className="font-semibold text-indigo-800">📋 Confirmations</h4>
-            <p className="text-indigo-700">Sent when booking is approved</p>
+        {/* Info Section */}
+        <div className="info-section">
+          <div className="info-header">
+            <Bell size={20} />
+            <h3 className="info-title">Notification Types</h3>
           </div>
-          <div>
-            <h4 className="font-semibold text-indigo-800">⏰ Reminders</h4>
-            <p className="text-indigo-700">Sent 24 hours before appointment</p>
-          </div>
-          <div>
-            <h4 className="font-semibold text-indigo-800">
-              💬 Custom Messages
-            </h4>
-            <p className="text-indigo-700">Manual messages for any purpose</p>
+          <div className="info-grid">
+            <div className="info-card">
+              <div className="info-icon confirmation">
+                <CheckCircle size={24} />
+              </div>
+              <div className="info-content">
+                <h4 className="info-card-title">Confirmations</h4>
+                <p className="info-card-text">Sent when booking is approved</p>
+              </div>
+            </div>
+            <div className="info-card">
+              <div className="info-icon reminder">
+                <Clock size={24} />
+              </div>
+              <div className="info-content">
+                <h4 className="info-card-title">Reminders</h4>
+                <p className="info-card-text">
+                  Sent 24 hours before appointment
+                </p>
+              </div>
+            </div>
+            <div className="info-card">
+              <div className="info-icon custom">
+                <MessageSquare size={24} />
+              </div>
+              <div className="info-content">
+                <h4 className="info-card-title">Custom Messages</h4>
+                <p className="info-card-text">
+                  Manual messages for any purpose
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -18,6 +18,7 @@ const MyInterests = () => {
   const [interests, setInterests] = useState([]);
   const [savedProperties, setSavedProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("express-interests");
 
   useEffect(() => {
     const fetchInterests = async () => {
@@ -92,7 +93,11 @@ const MyInterests = () => {
   };
 
   const handleRemoveSavedProperty = async (propertyId) => {
-    if (window.confirm("Are you sure you want to remove this property from saved?")) {
+    if (
+      window.confirm(
+        "Are you sure you want to remove this property from saved?"
+      )
+    ) {
       try {
         await api.delete(`/properties/${propertyId}/save`);
         // Refresh the data
@@ -128,155 +133,229 @@ const MyInterests = () => {
               <Heart className="header-icon" size={32} />
               <h1 className="page-title">My Property Interests</h1>
               <p className="page-subtitle">
-                Track properties you're interested in and have saved ({interests.length + savedProperties.length})
+                Track properties you're interested in and have saved (
+                {interests.length + savedProperties.length})
               </p>
             </div>
           </div>
         </div>
 
+        {/* Tabs */}
+        <div className="interests-tabs">
+          <button
+            onClick={() => setActiveTab("express-interests")}
+            className={`tab-button ${
+              activeTab === "express-interests" ? "active" : ""
+            }`}
+          >
+            Express Interests ({interests.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("saved")}
+            className={`tab-button ${activeTab === "saved" ? "active" : ""}`}
+          >
+            Saved Properties ({savedProperties.length})
+          </button>
+        </div>
+
         {/* Content */}
-        {(interests.length === 0 && savedProperties.length === 0) ? (
-          <div className="empty-state">
-            <Heart className="empty-icon" size={64} />
-            <h3 className="empty-title">No property interests yet</h3>
-            <p className="empty-subtitle">
-              When you express interest in properties or save them, they'll appear here for
-              easy tracking
-            </p>
-          </div>
-        ) : (
-          <div className="interests-grid">
-            {/* Express Interests */}
-            {interests.map((interest) => (
-              <div key={`interest-${interest.id}`} className="interest-card">
-                {/* Property Info */}
-                <div className="interest-header">
-                  <div className="interest-property-info">
-                    <h3 className="interest-property-name">
-                      {interest.property_name}
-                    </h3>
-                    <p className="interest-unit-type">
-                      {interest.unit_type_name}
-                    </p>
-                    <div className="interest-location">
-                      <MapPin size={16} />
-                      <span>{interest.contact_email}</span>
-                    </div>
-                  </div>
-                  <div className="interest-status-section">
-                    {getStatusBadge(interest.is_active)}
-                    <span className="interest-type">Express Interest</span>
-                  </div>
-                </div>
-
-                {/* Interest Details */}
-                <div className="interest-details">
-                  <div className="interest-meta">
-                    <div className="interest-meta-item">
-                      <Calendar size={16} />
-                      <span>
-                        Valid for: {interest.timeframe_months} month{interest.timeframe_months > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </div>
-
-                  {interest.special_requests && (
-                    <div className="interest-requests">
-                      <p className="requests-label">Special Requests:</p>
-                      <p className="requests-text">{interest.special_requests}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="interest-actions">
-                  <button
-                    className="interest-action-btn primary"
-                    onClick={() => handleViewProperty(interest.property_id)}
-                  >
-                    <ExternalLink size={16} />
-                    View Property
-                  </button>
-                  <button
-                    className="interest-action-btn secondary"
-                    onClick={() => handleRemoveInterest(interest.id)}
-                  >
-                    <Trash2 size={16} />
-                    Remove Interest
-                  </button>
-                </div>
+        {activeTab === "express-interests" && (
+          <>
+            {interests.length === 0 ? (
+              <div className="empty-state">
+                <AlertCircle className="empty-icon" size={64} />
+                <h3 className="empty-title">No express interests yet</h3>
+                <p className="empty-subtitle">
+                  When you express interest in properties, they'll appear here
+                  for easy tracking
+                </p>
               </div>
-            ))}
-
-            {/* Saved Properties */}
-            {savedProperties.map((property) => (
-              <div key={`saved-${property.id}`} className="interest-card">
-                {/* Property Info */}
-                <div className="interest-header">
-                  <div className="interest-property-info">
-                    <h3 className="interest-property-name">
-                      {property.name}
-                    </h3>
-                    <p className="interest-unit-type">
-                      Property in {property.neighborhood || property.city}
-                    </p>
-                    <div className="interest-location">
-                      <MapPin size={16} />
-                      <span>{property.address}, {property.city}</span>
-                    </div>
-                  </div>
-                  <div className="interest-status-section">
-                    <span className="interest-status active">
-                      <CheckCircle size={14} /> Saved
-                    </span>
-                    <span className="interest-type">Saved Property</span>
-                  </div>
-                </div>
-
-                {/* Property Details */}
-                <div className="interest-details">
-                  <div className="interest-meta">
-                    <div className="interest-meta-item">
-                      <Calendar size={16} />
-                      <span>
-                        Property saved to your favorites
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="interest-features">
-                    <div className="feature-list">
-                      {property.has_parking && <span className="feature-tag">Parking</span>}
-                      {property.has_security && <span className="feature-tag">Security</span>}
-                      {property.has_borehole && <span className="feature-tag">Borehole</span>}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="interest-actions">
-                  <button
-                    className="interest-action-btn primary"
-                    onClick={() => handleViewProperty(property.id)}
+            ) : (
+              <div className="interests-grid">
+                {interests.map((interest) => (
+                  <div
+                    key={`interest-${interest.id}`}
+                    className="interest-card"
                   >
-                    <ExternalLink size={16} />
-                    View Property
-                  </button>
-                  <button
-                    className="interest-action-btn secondary"
-                    onClick={() => handleRemoveSavedProperty(property.id)}
-                  >
-                    <Trash2 size={16} />
-                    Remove from Saved
-                  </button>
-                </div>
+                    {interest.primary_image && (
+                      <div className="property-image-container">
+                        <img
+                          src={interest.primary_image}
+                          alt={interest.property_name}
+                          className="property-image"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
+                    {/* Property Info */}
+                    <div className="interest-header">
+                      <div className="interest-property-info">
+                        <h3 className="interest-property-name">
+                          {interest.property_name}
+                        </h3>
+                        <p className="interest-unit-type">
+                          {interest.unit_type_name}
+                        </p>
+                        <div className="interest-location">
+                          <MapPin size={16} />
+                          <span>{interest.contact_email}</span>
+                        </div>
+                      </div>
+                      <div className="interest-status-section">
+                        {getStatusBadge(interest.is_active)}
+                        <span className="interest-type">Express Interest</span>
+                      </div>
+                    </div>
+
+                    {/* Interest Details */}
+                    <div className="interest-details">
+                      <div className="interest-meta">
+                        <div className="interest-meta-item">
+                          <Calendar size={16} />
+                          <span>
+                            Valid for: {interest.timeframe_months} month
+                            {interest.timeframe_months > 1 ? "s" : ""}
+                          </span>
+                        </div>
+                      </div>
+
+                      {interest.special_requests && (
+                        <div className="interest-requests">
+                          <p className="requests-label">Special Requests:</p>
+                          <p className="requests-text">
+                            {interest.special_requests}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="interest-actions">
+                      <button
+                        className="interest-action-btn primary"
+                        onClick={() => handleViewProperty(interest.property_id)}
+                      >
+                        <ExternalLink size={16} />
+                        View Property
+                      </button>
+                      <button
+                        className="interest-action-btn secondary"
+                        onClick={() => handleRemoveInterest(interest.id)}
+                      >
+                        <Trash2 size={16} />
+                        Remove Interest
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
+        )}
+
+        {activeTab === "saved" && (
+          <>
+            {savedProperties.length === 0 ? (
+              <div className="empty-state">
+                <Heart className="empty-icon" size={64} />
+                <h3 className="empty-title">No saved properties yet</h3>
+                <p className="empty-subtitle">
+                  When you save properties to your favorites, they'll appear
+                  here
+                </p>
+              </div>
+            ) : (
+              <div className="interests-grid">
+                {savedProperties.map((property) => (
+                  <div key={`saved-${property.id}`} className="interest-card">
+                    {property.primary_image && (
+                      <div className="property-image-container">
+                        <img
+                          src={property.primary_image}
+                          alt={property.name}
+                          className="property-image"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
+                    {/* Property Info */}
+                    <div className="interest-header">
+                      <div className="interest-property-info">
+                        <h3 className="interest-property-name">
+                          {property.name}
+                        </h3>
+                        <p className="interest-unit-type">
+                          Property in {property.neighborhood || property.city}
+                        </p>
+                        <div className="interest-location">
+                          <MapPin size={16} />
+                          <span>
+                            {property.address}, {property.city}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="interest-status-section">
+                        <span className="interest-status active">
+                          <CheckCircle size={14} /> Saved
+                        </span>
+                        <span className="interest-type">Saved Property</span>
+                      </div>
+                    </div>
+
+                    {/* Property Details */}
+                    <div className="interest-details">
+                      <div className="interest-meta">
+                        <div className="interest-meta-item">
+                          <Calendar size={16} />
+                          <span>Property saved to your favorites</span>
+                        </div>
+                      </div>
+
+                      <div className="interest-features">
+                        <div className="feature-list">
+                          {property.has_parking && (
+                            <span className="feature-tag">Parking</span>
+                          )}
+                          {property.has_security && (
+                            <span className="feature-tag">Security</span>
+                          )}
+                          {property.has_borehole && (
+                            <span className="feature-tag">Borehole</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="interest-actions">
+                      <button
+                        className="interest-action-btn primary"
+                        onClick={() => handleViewProperty(property.id)}
+                      >
+                        <ExternalLink size={16} />
+                        View Property
+                      </button>
+                      <button
+                        className="interest-action-btn secondary"
+                        onClick={() => handleRemoveSavedProperty(property.id)}
+                      >
+                        <Trash2 size={16} />
+                        Remove from Saved
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {/* Footer */}
-        {interests.length > 0 && (
+        {activeTab === "express-interests" && interests.length > 0 && (
           <div className="page-footer">
             <p>
               We'll notify you when units become available for your interested

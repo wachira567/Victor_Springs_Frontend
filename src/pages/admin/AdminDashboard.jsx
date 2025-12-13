@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import api from "../../api/axios";
 import { toast } from "react-toastify";
+import NotificationManager from "./NotificationManager";
 import {
   BarChart3,
   Building,
@@ -97,12 +98,6 @@ const AdminDashboard = () => {
   const [editedMessage, setEditedMessage] = useState("");
   const [editedSubject, setEditedSubject] = useState("");
 
-  // Notifications state
-  const [notificationBookings, setNotificationBookings] = useState([]);
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [notificationType, setNotificationType] = useState("");
-  const [customMessage, setCustomMessage] = useState("");
-
   // Activity state
   const [activities, setActivities] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -125,8 +120,6 @@ const AdminDashboard = () => {
       checkBridgeStatus();
     } else if (activeTab === "message-templates") {
       fetchTemplates();
-    } else if (activeTab === "notifications") {
-      loadNotificationBookings();
     } else if (activeTab === "activity") {
       fetchActivities();
     }
@@ -292,13 +285,29 @@ Victor Springs Team
     // Search filter
     if (interestsSearchTerm.trim()) {
       const searchLower = interestsSearchTerm.toLowerCase();
-      const matchesName = interest.contact_name?.toLowerCase().includes(searchLower);
-      const matchesEmail = interest.contact_email?.toLowerCase().includes(searchLower);
-      const matchesPhone = interest.contact_phone?.toLowerCase().includes(searchLower);
-      const matchesProperty = interest.property_name?.toLowerCase().includes(searchLower);
-      const matchesUnit = interest.unit_type_name?.toLowerCase().includes(searchLower);
+      const matchesName = interest.contact_name
+        ?.toLowerCase()
+        .includes(searchLower);
+      const matchesEmail = interest.contact_email
+        ?.toLowerCase()
+        .includes(searchLower);
+      const matchesPhone = interest.contact_phone
+        ?.toLowerCase()
+        .includes(searchLower);
+      const matchesProperty = interest.property_name
+        ?.toLowerCase()
+        .includes(searchLower);
+      const matchesUnit = interest.unit_type_name
+        ?.toLowerCase()
+        .includes(searchLower);
 
-      if (!matchesName && !matchesEmail && !matchesPhone && !matchesProperty && !matchesUnit) {
+      if (
+        !matchesName &&
+        !matchesEmail &&
+        !matchesPhone &&
+        !matchesProperty &&
+        !matchesUnit
+      ) {
         return false;
       }
     }
@@ -307,12 +316,26 @@ Victor Springs Team
   });
 
   // Get unique properties and units for filter options
-  const uniqueProperties = interests && interests.length > 0 ? [
-    ...new Set(interests.map((i) => i?.property_name).filter(name => name != null && name !== '')),
-  ].sort() : [];
-  const uniqueUnits = interests && interests.length > 0 ? [
-    ...new Set(interests.map((i) => i?.unit_type_name).filter(name => name != null && name !== '')),
-  ].sort() : [];
+  const uniqueProperties =
+    interests && interests.length > 0
+      ? [
+          ...new Set(
+            interests
+              .map((i) => i?.property_name)
+              .filter((name) => name != null && name !== "")
+          ),
+        ].sort()
+      : [];
+  const uniqueUnits =
+    interests && interests.length > 0
+      ? [
+          ...new Set(
+            interests
+              .map((i) => i?.unit_type_name)
+              .filter((name) => name != null && name !== "")
+          ),
+        ].sort()
+      : [];
   // Communications functions
   const loadSettings = async () => {
     try {
@@ -428,47 +451,6 @@ Victor Springs Team
     } catch (error) {
       console.error("Error updating settings:", error);
       toast.error("Failed to update global settings");
-    }
-  };
-
-  // Notifications functions
-  const loadNotificationBookings = async () => {
-    try {
-      const [bookingsRes, interestsRes] = await Promise.all([
-        api.get("/admin/bookings-with-phones"),
-        api.get("/admin/property-interests"),
-      ]);
-
-      const bookings = bookingsRes.data || [];
-      const interests = interestsRes.data || [];
-
-      // Transform interests to match booking structure for notifications
-      const transformedInterests = interests.map((interest) => ({
-        id: `interest-${interest.id}`,
-        user_name: interest.contact_name,
-        user_email: interest.contact_email,
-        user_phone: interest.contact_phone,
-        appointment_date: interest.created_at, // Use created_at as date
-        property_name: interest.property_name,
-        unit_type: interest.unit_type_name,
-        type: "interest",
-        status: "active",
-      }));
-
-      // Combine bookings and interests
-      const combinedNotifications = [...bookings, ...transformedInterests];
-
-      // Sort by date (most recent first)
-      combinedNotifications.sort(
-        (a, b) =>
-          new Date(b.appointment_date || b.created_at) -
-          new Date(a.appointment_date || a.created_at)
-      );
-
-      setNotificationBookings(combinedNotifications);
-    } catch (error) {
-      console.error("Failed to load notifications:", error);
-      toast.error("Failed to load notifications");
     }
   };
 
@@ -1129,7 +1111,9 @@ Victor Springs Team
                           type="text"
                           placeholder="Search by name, email, phone, property, or unit type..."
                           value={interestsSearchTerm}
-                          onChange={(e) => setInterestsSearchTerm(e.target.value)}
+                          onChange={(e) =>
+                            setInterestsSearchTerm(e.target.value)
+                          }
                           className="search-input"
                         />
                         {interestsSearchTerm && (
@@ -1182,7 +1166,9 @@ Victor Springs Team
                         </select>
                       </div>
 
-                      {(propertyFilter !== "all" || unitFilter !== "all" || interestsSearchTerm) && (
+                      {(propertyFilter !== "all" ||
+                        unitFilter !== "all" ||
+                        interestsSearchTerm) && (
                         <button
                           className="clear-filters-btn"
                           onClick={() => {
@@ -1208,9 +1194,14 @@ Victor Springs Team
                       <p>
                         {filter === "all"
                           ? "No property interests have been recorded yet."
-                          : `No ${filter.replace("_", " ")} interests found matching your criteria.`}
+                          : `No ${filter.replace(
+                              "_",
+                              " "
+                            )} interests found matching your criteria.`}
                       </p>
-                      {(propertyFilter !== "all" || unitFilter !== "all" || interestsSearchTerm) && (
+                      {(propertyFilter !== "all" ||
+                        unitFilter !== "all" ||
+                        interestsSearchTerm) && (
                         <button
                           className="clear-all-filters-btn"
                           onClick={() => {
@@ -1228,7 +1219,8 @@ Victor Springs Team
                     <>
                       <div className="results-summary">
                         <span className="results-count">
-                          Showing {filteredInterests.length} of {interests.length} interests
+                          Showing {filteredInterests.length} of{" "}
+                          {interests.length} interests
                         </span>
                       </div>
 
@@ -1259,7 +1251,9 @@ Victor Springs Team
                                 {isInterestActive(interest) && (
                                   <button
                                     className="action-btn primary"
-                                    onClick={() => openNotificationModal(interest)}
+                                    onClick={() =>
+                                      openNotificationModal(interest)
+                                    }
                                     title="Send availability notification"
                                   >
                                     <Bell size={16} />
@@ -1278,7 +1272,9 @@ Victor Springs Team
                             {/* Card Content */}
                             <div className="card-content">
                               <div className="contact-section">
-                                <h3 className="contact-name">{interest.contact_name}</h3>
+                                <h3 className="contact-name">
+                                  {interest.contact_name}
+                                </h3>
                                 <div className="contact-details">
                                   <div className="contact-item">
                                     <Mail size={14} />
@@ -1306,14 +1302,22 @@ Victor Springs Team
                                 <div className="detail-row">
                                   <Calendar size={14} />
                                   <span>
-                                    Expires: {interest.valid_until
-                                      ? new Date(interest.valid_until).toLocaleDateString()
+                                    Expires:{" "}
+                                    {interest.valid_until
+                                      ? new Date(
+                                          interest.valid_until
+                                        ).toLocaleDateString()
                                       : "N/A"}
                                   </span>
                                 </div>
                                 <div className="detail-row">
                                   <Clock size={14} />
-                                  <span>Timeframe: {getTimeframeText(interest.timeframe_months)}</span>
+                                  <span>
+                                    Timeframe:{" "}
+                                    {getTimeframeText(
+                                      interest.timeframe_months
+                                    )}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -1323,28 +1327,48 @@ Victor Springs Team
                               <div className="notification-header">
                                 <MessageSquare size={14} />
                                 <span className="notification-count">
-                                  {interest.notifications?.length || 0} notifications sent
+                                  {interest.notifications?.length || 0}{" "}
+                                  notifications sent
                                 </span>
                               </div>
-                              {interest.notifications && interest.notifications.length > 0 && (
-                                <div className="recent-notifications">
-                                  {interest.notifications.slice(0, 2).map((notification) => (
-                                    <div key={notification.id} className="notification-preview">
-                                      <span className={`notification-status ${notification.success ? "success" : "failed"}`}>
-                                        {notification.success ? <CheckCircle size={12} /> : <AlertTriangle size={12} />}
+                              {interest.notifications &&
+                                interest.notifications.length > 0 && (
+                                  <div className="recent-notifications">
+                                    {interest.notifications
+                                      .slice(0, 2)
+                                      .map((notification) => (
+                                        <div
+                                          key={notification.id}
+                                          className="notification-preview"
+                                        >
+                                          <span
+                                            className={`notification-status ${
+                                              notification.success
+                                                ? "success"
+                                                : "failed"
+                                            }`}
+                                          >
+                                            {notification.success ? (
+                                              <CheckCircle size={12} />
+                                            ) : (
+                                              <AlertTriangle size={12} />
+                                            )}
+                                          </span>
+                                          <span className="notification-date">
+                                            {new Date(
+                                              notification.sent_at
+                                            ).toLocaleDateString()}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    {interest.notifications.length > 2 && (
+                                      <span className="more-notifications">
+                                        +{interest.notifications.length - 2}{" "}
+                                        more
                                       </span>
-                                      <span className="notification-date">
-                                        {new Date(notification.sent_at).toLocaleDateString()}
-                                      </span>
-                                    </div>
-                                  ))}
-                                  {interest.notifications.length > 2 && (
-                                    <span className="more-notifications">
-                                      +{interest.notifications.length - 2} more
-                                    </span>
-                                  )}
-                                </div>
-                              )}
+                                    )}
+                                  </div>
+                                )}
                             </div>
 
                             {/* Special Requests */}
@@ -1361,10 +1385,23 @@ Victor Springs Team
                             {/* Card Footer */}
                             <div className="card-footer">
                               <div className="created-date">
-                                <span>Created {new Date(interest.created_at).toLocaleDateString()}</span>
+                                <span>
+                                  Created{" "}
+                                  {new Date(
+                                    interest.created_at
+                                  ).toLocaleDateString()}
+                                </span>
                               </div>
-                              <div className={`status-badge ${isInterestActive(interest) ? "active" : "expired"}`}>
-                                {isInterestActive(interest) ? "Active" : "Expired"}
+                              <div
+                                className={`status-badge ${
+                                  isInterestActive(interest)
+                                    ? "active"
+                                    : "expired"
+                                }`}
+                              >
+                                {isInterestActive(interest)
+                                  ? "Active"
+                                  : "Expired"}
                               </div>
                             </div>
                           </div>
@@ -1704,201 +1741,7 @@ Victor Springs Team
             </div>
           )}
 
-          {activeTab === "notifications" && (
-            <div className="notifications-section">
-              <div className="admin-container">
-                <div className="admin-header">
-                  <h1>Notification Manager</h1>
-                  <p>
-                    Manage automated notifications, reminders, and confirmations
-                    for bookings
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Bell className="text-indigo-600" size={24} />
-                    <div>
-                      <h2 className="text-xl font-semibold">Notifications</h2>
-                      <p className="text-sm text-gray-600">
-                        Send automated notifications to customers and manage
-                        interests
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {notificationBookings.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <Calendar
-                          size={48}
-                          className="mx-auto mb-4 opacity-50"
-                        />
-                        <p>No bookings found</p>
-                      </div>
-                    ) : (
-                      notificationBookings.map((booking) => (
-                        <div
-                          key={booking.id}
-                          className="border border-gray-200 rounded-lg p-4"
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              <User size={20} className="text-gray-400" />
-                              <div>
-                                <h3 className="font-semibold">
-                                  {booking.user_name}
-                                </h3>
-                                <p className="text-sm text-gray-600">
-                                  {booking.user_email}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {booking.type === "interest" ? (
-                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                                  Interest
-                                </span>
-                              ) : (
-                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                                  Confirmed
-                                </span>
-                              )}
-                              <span className="text-sm text-gray-500">
-                                {new Date(
-                                  booking.appointment_date || booking.created_at
-                                ).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-4 mb-3">
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
-                              <Phone size={14} />
-                              {booking.user_phone}
-                            </div>
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
-                              <Mail size={14} />
-                              {booking.property_name} - {booking.unit_type}
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            {booking.type === "interest" ? (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    sendNotification(
-                                      booking.id,
-                                      "express_interest",
-                                      null,
-                                      true
-                                    )
-                                  }
-                                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
-                                >
-                                  <Heart size={14} />
-                                  Send Interest Notification
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelectedBooking(booking);
-                                    setNotificationType("custom");
-                                  }}
-                                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
-                                >
-                                  <MessageSquare size={14} />
-                                  Custom Message
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    sendNotification(booking.id, "confirmation")
-                                  }
-                                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
-                                >
-                                  <CheckCircle size={14} />
-                                  Send Confirmation
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    sendNotification(booking.id, "reminder")
-                                  }
-                                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 rounded-lg flex items-center gap-2 text-sm"
-                                >
-                                  <Clock size={14} />
-                                  Send Reminder
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelectedBooking(booking);
-                                    setNotificationType("custom");
-                                  }}
-                                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
-                                >
-                                  <MessageSquare size={14} />
-                                  Custom Message
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {selectedBooking && notificationType === "custom" && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                      <h3 className="text-lg font-semibold mb-4">
-                        Send Custom Message
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        To: {selectedBooking.user_name} (
-                        {selectedBooking.user_phone})
-                      </p>
-                      <textarea
-                        value={customMessage}
-                        onChange={(e) => setCustomMessage(e.target.value)}
-                        placeholder="Enter your custom message..."
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-4"
-                        rows={4}
-                      />
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedBooking(null);
-                            setCustomMessage("");
-                          }}
-                          className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => {
-                            sendNotification(
-                              selectedBooking.id,
-                              "custom",
-                              customMessage
-                            );
-                            setSelectedBooking(null);
-                            setCustomMessage("");
-                          }}
-                          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                        >
-                          <Send size={16} />
-                          Send Message
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {activeTab === "notifications" && <NotificationManager />}
 
           {activeTab === "activity" && (
             <div className="activity-section">
