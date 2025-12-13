@@ -35,6 +35,9 @@ import {
   Search,
   User,
   Clock,
+  AlertTriangle,
+  Home,
+  X,
 } from "lucide-react";
 import "./AdminDashboard.css";
 
@@ -66,6 +69,14 @@ const AdminDashboard = () => {
   // Property Interests state
   const [interests, setInterests] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [propertyFilter, setPropertyFilter] = useState("all");
+  const [unitFilter, setUnitFilter] = useState("all");
+  const [interestsSearchTerm, setInterestsSearchTerm] = useState("");
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [selectedInterest, setSelectedInterest] = useState(null);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [sendingNotification, setSendingNotification] = useState(false);
+  const [editingMessage, setEditingMessage] = useState(false);
 
   // Communications state
   const [settings, setSettings] = useState({
@@ -96,6 +107,7 @@ const AdminDashboard = () => {
   const [activities, setActivities] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [activityTab, setActivityTab] = useState("all");
 
   useEffect(() => {
     if (activeTab === "dashboard") {
@@ -180,6 +192,7 @@ const AdminDashboard = () => {
     if (!window.confirm("Are you sure you want to delete this interest?")) {
       return;
     }
+
     try {
       await api.delete(`/admin/property-interests/${interestId}`);
       setInterests(interests.filter((i) => i.id !== interestId));
@@ -190,6 +203,116 @@ const AdminDashboard = () => {
     }
   };
 
+  const isInterestActive = (interest) => {
+    if (!interest || !interest.valid_until) return false;
+    const validUntil = new Date(interest.valid_until);
+    const now = new Date();
+    return validUntil > now;
+  };
+
+  const getTimeframeText = (months) => {
+    if (months === 1) return "1 month";
+    if (months === 3) return "3 months";
+    if (months === 6) return "6 months";
+    if (months === 12) return "12 months";
+    return `${months} months`;
+  };
+
+  const openNotificationModal = (interest) => {
+    setSelectedInterest(interest);
+    // Set default notification message
+    const defaultMessage = `🏠 Great news! A unit in ${interest.property_name} (${interest.unit_type_name}) is now available!
+
+Hi ${interest.contact_name},
+
+We're excited to inform you that a unit matching your interest in ${interest.property_name} has become available. This is a limited-time opportunity!
+
+📍 Property: ${interest.property_name}
+🏢 Unit Type: ${interest.unit_type_name}
+💰 Contact us for pricing details
+
+Don't miss out on this opportunity! Contact us today to secure this unit.
+
+Best regards,
+Victor Springs Team
+📞 +254 700 000 000`;
+
+    setNotificationMessage(defaultMessage);
+    setShowNotificationModal(true);
+  };
+
+  const sendInterestNotification = async () => {
+    if (!selectedInterest || !notificationMessage.trim()) {
+      toast.error("Please enter a notification message");
+      return;
+    }
+
+    setSendingNotification(true);
+    try {
+      // Use the custom notification endpoint with vacancy_alert_id for logging
+      await api.post("/notifications/send-custom", {
+        phone: selectedInterest.contact_phone,
+        message: notificationMessage,
+        vacancy_alert_id: selectedInterest.id,
+      });
+
+      // Refresh the interests to show updated notification history
+      await fetchInterests();
+
+      toast.success("Notification sent successfully!");
+      setShowNotificationModal(false);
+      setSelectedInterest(null);
+      setNotificationMessage("");
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      toast.error("Failed to send notification");
+      setShowNotificationModal(false);
+      setSelectedInterest(null);
+      setNotificationMessage("");
+    } finally {
+      setSendingNotification(false);
+    }
+  };
+
+  const filteredInterests = (interests || []).filter((interest) => {
+    if (!interest) return false;
+
+    // User type filter
+    if (filter === "signed_in" && interest.user_id === null) return false;
+    if (filter === "guests" && interest.guest_id === null) return false;
+
+    // Property filter
+    if (propertyFilter !== "all" && interest.property_name !== propertyFilter)
+      return false;
+
+    // Unit filter
+    if (unitFilter !== "all" && interest.unit_type_name !== unitFilter)
+      return false;
+
+    // Search filter
+    if (interestsSearchTerm.trim()) {
+      const searchLower = interestsSearchTerm.toLowerCase();
+      const matchesName = interest.contact_name?.toLowerCase().includes(searchLower);
+      const matchesEmail = interest.contact_email?.toLowerCase().includes(searchLower);
+      const matchesPhone = interest.contact_phone?.toLowerCase().includes(searchLower);
+      const matchesProperty = interest.property_name?.toLowerCase().includes(searchLower);
+      const matchesUnit = interest.unit_type_name?.toLowerCase().includes(searchLower);
+
+      if (!matchesName && !matchesEmail && !matchesPhone && !matchesProperty && !matchesUnit) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Get unique properties and units for filter options
+  const uniqueProperties = interests && interests.length > 0 ? [
+    ...new Set(interests.map((i) => i?.property_name).filter(name => name != null && name !== '')),
+  ].sort() : [];
+  const uniqueUnits = interests && interests.length > 0 ? [
+    ...new Set(interests.map((i) => i?.unit_type_name).filter(name => name != null && name !== '')),
+  ].sort() : [];
   // Communications functions
   const loadSettings = async () => {
     try {
@@ -311,72 +434,106 @@ const AdminDashboard = () => {
   // Notifications functions
   const loadNotificationBookings = async () => {
     try {
-      const response = await api.get("/admin/bookings-with-phones");
-      setNotificationBookings(response.data);
-    } catch (error) {
-      console.error("Failed to load bookings:", error);
-      toast.error("Failed to load bookings");
-    }
-  };
+      const [bookingsRes, interestsRes] = await Promise.all([
+        api.get("/admin/bookings-with-phones"),
+        api.get("/admin/property-interests"),
+      ]);
 
-  const sendNotification = async (bookingId, type, customMsg = "") => {
-    try {
-      const payload = {
-        booking_id: bookingId,
-        type: type,
-        custom_message: customMsg,
-      };
-      await api.post("/admin/send-notification", payload);
-      toast.success(`${type} notification sent successfully!`);
-      loadNotificationBookings(); // Refresh to show updated status
+      const bookings = bookingsRes.data || [];
+      const interests = interestsRes.data || [];
+
+      // Transform interests to match booking structure for notifications
+      const transformedInterests = interests.map((interest) => ({
+        id: `interest-${interest.id}`,
+        user_name: interest.contact_name,
+        user_email: interest.contact_email,
+        user_phone: interest.contact_phone,
+        appointment_date: interest.created_at, // Use created_at as date
+        property_name: interest.property_name,
+        unit_type: interest.unit_type_name,
+        type: "interest",
+        status: "active",
+      }));
+
+      // Combine bookings and interests
+      const combinedNotifications = [...bookings, ...transformedInterests];
+
+      // Sort by date (most recent first)
+      combinedNotifications.sort(
+        (a, b) =>
+          new Date(b.appointment_date || b.created_at) -
+          new Date(a.appointment_date || a.created_at)
+      );
+
+      setNotificationBookings(combinedNotifications);
     } catch (error) {
-      console.error("Failed to send notification:", error);
-      toast.error("Failed to send notification");
+      console.error("Failed to load notifications:", error);
+      toast.error("Failed to load notifications");
     }
   };
 
   // Activity functions
   const fetchActivities = async () => {
     try {
-      const mockActivities = [
-        {
-          id: 1,
+      // Fetch real data from multiple endpoints
+      const [siteVisitsRes, interestsRes] = await Promise.all([
+        api.get("/admin/site-visits"),
+        api.get("/admin/property-interests"),
+      ]);
+
+      const siteVisits = siteVisitsRes.data || [];
+      const interests = interestsRes.data || [];
+
+      // Combine and transform into activity format
+      const activitiesData = [
+        // Site visits
+        ...siteVisits.map((visit) => ({
+          id: `visit-${visit.id}`,
           type: "site_visit",
           title: "Site Visit Request",
-          description: "John Doe requested a site visit for Nairobi Arboretum",
-          user_name: "John Doe",
-          user_email: "john@example.com",
-          user_phone: "+254700000000",
-          property_name: "Nairobi Arboretum",
-          status: "pending",
-          created_at: new Date(Date.now() - 1000 * 60 * 30),
-          priority: "high",
+          description: `${visit.contact_name} requested a site visit for ${visit.property_name}`,
+          user_name: visit.contact_name,
+          user_email: visit.contact_email,
+          user_phone: visit.contact_phone,
+          property_name: visit.property_name,
+          status: visit.status,
+          created_at: new Date(visit.created_at || visit.appointment_date),
+          priority: visit.status === "pending" ? "high" : "medium",
           details: {
-            visit_date: "2024-12-15",
-            visit_time: "14:00",
-            special_requests: "Bring property documents",
+            visit_date: visit.appointment_date
+              ? new Date(visit.appointment_date).toLocaleDateString()
+              : null,
+            unit_type: visit.unit_type_name,
+            special_requests: visit.admin_notes,
           },
-        },
-        {
-          id: 2,
+        })),
+        // Property interests
+        ...interests.map((interest) => ({
+          id: `interest-${interest.id}`,
           type: "property_interest",
           title: "Property Interest",
-          description:
-            "Sarah Johnson expressed interest in 2-bedroom apartments",
-          user_name: "Sarah Johnson",
-          user_email: "sarah@example.com",
-          user_phone: "+254711111111",
-          property_name: "Westlands Heights",
+          description: `${interest.contact_name} expressed interest in ${interest.property_name}`,
+          user_name: interest.contact_name,
+          user_email: interest.contact_email,
+          user_phone: interest.contact_phone,
+          property_name: interest.property_name,
           status: "active",
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 2),
+          created_at: new Date(interest.created_at),
           priority: "medium",
           details: {
-            timeframe_months: 3,
-            special_requests: "Prefer ground floor units",
+            timeframe_months: interest.timeframe_months,
+            unit_type: interest.unit_type_name,
+            special_requests: interest.special_requests,
           },
-        },
+        })),
       ];
-      setActivities(mockActivities);
+
+      // Sort by created date (most recent first)
+      activitiesData.sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+
+      setActivities(activitiesData);
     } catch (error) {
       console.error("Error fetching activities:", error);
       toast.error("Failed to load activities");
@@ -864,23 +1021,26 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {/* Commented out Property Interests Section */}
-          {/* {activeTab === "property-interests" && (
-            <div className="property-interests-section">
+          {activeTab === "property-interests" && (
+            <div className="property-interests-page">
               <div className="property-interests-container">
+                {/* Header */}
                 <div className="property-interests-header">
                   <div className="header-content">
-                    <h1 className="page-title">Property Interests</h1>
+                    <h1 className="page-title">
+                      Property Interests Management
+                    </h1>
                     <p className="page-subtitle">
-                      Manage property interest requests from both signed-in
-                      users and guests
+                      Track and manage property interest requests with detailed
+                      notification history
                     </p>
                   </div>
                 </div>
- 
+
+                {/* Stats Cards */}
                 <div className="stats-grid">
                   <div className="stat-card">
-                    <div className="stat-icon">
+                    <div className="stat-icon users">
                       <Users size={24} />
                     </div>
                     <div className="stat-content">
@@ -888,8 +1048,9 @@ const AdminDashboard = () => {
                       <p className="stat-label">Total Interests</p>
                     </div>
                   </div>
+
                   <div className="stat-card">
-                    <div className="stat-icon">
+                    <div className="stat-icon signed-in">
                       <UserCheck size={24} />
                     </div>
                     <div className="stat-content">
@@ -899,8 +1060,9 @@ const AdminDashboard = () => {
                       <p className="stat-label">Signed-in Users</p>
                     </div>
                   </div>
+
                   <div className="stat-card">
-                    <div className="stat-icon">
+                    <div className="stat-icon guests">
                       <Users size={24} />
                     </div>
                     <div className="stat-content">
@@ -910,8 +1072,21 @@ const AdminDashboard = () => {
                       <p className="stat-label">Guest Users</p>
                     </div>
                   </div>
+
+                  <div className="stat-card">
+                    <div className="stat-icon expired">
+                      <AlertTriangle size={24} />
+                    </div>
+                    <div className="stat-content">
+                      <h3 className="stat-number">
+                        {interests.filter((i) => !isInterestActive(i)).length}
+                      </h3>
+                      <p className="stat-label">Expired Interests</p>
+                    </div>
+                  </div>
                 </div>
- 
+
+                {/* Filters */}
                 <div className="filters-section">
                   <div className="filter-buttons">
                     <button
@@ -944,103 +1119,359 @@ const AdminDashboard = () => {
                       {interests.filter((i) => i.guest_id !== null).length})
                     </button>
                   </div>
+
+                  {/* Search and Filters */}
+                  <div className="search-and-filters">
+                    <div className="search-group">
+                      <div className="search-input-wrapper">
+                        <Search size={16} className="search-icon" />
+                        <input
+                          type="text"
+                          placeholder="Search by name, email, phone, property, or unit type..."
+                          value={interestsSearchTerm}
+                          onChange={(e) => setInterestsSearchTerm(e.target.value)}
+                          className="search-input"
+                        />
+                        {interestsSearchTerm && (
+                          <button
+                            onClick={() => setInterestsSearchTerm("")}
+                            className="clear-search-btn"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="advanced-filters">
+                      <div className="filter-group">
+                        <label className="filter-label">
+                          <Building size={14} />
+                          Property
+                        </label>
+                        <select
+                          value={propertyFilter}
+                          onChange={(e) => setPropertyFilter(e.target.value)}
+                          className="filter-select"
+                        >
+                          <option value="all">All Properties</option>
+                          {uniqueProperties.map((property) => (
+                            <option key={property} value={property}>
+                              {property}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="filter-group">
+                        <label className="filter-label">
+                          <Home size={14} />
+                          Unit Type
+                        </label>
+                        <select
+                          value={unitFilter}
+                          onChange={(e) => setUnitFilter(e.target.value)}
+                          className="filter-select"
+                        >
+                          <option value="all">All Unit Types</option>
+                          {uniqueUnits.map((unit) => (
+                            <option key={unit} value={unit}>
+                              {unit}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {(propertyFilter !== "all" || unitFilter !== "all" || interestsSearchTerm) && (
+                        <button
+                          className="clear-filters-btn"
+                          onClick={() => {
+                            setPropertyFilter("all");
+                            setUnitFilter("all");
+                            setInterestsSearchTerm("");
+                          }}
+                        >
+                          <X size={14} />
+                          Clear All
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
- 
-                <div className="interests-list">
-                  {interests.length === 0 ? (
+
+                {/* Interests Grid */}
+                <div className="interests-grid-container">
+                  {filteredInterests.length === 0 ? (
                     <div className="empty-state">
-                      <Users size={48} />
+                      <Heart size={64} className="empty-icon" />
                       <h3>No interests found</h3>
-                      <p>No property interests have been recorded yet.</p>
+                      <p>
+                        {filter === "all"
+                          ? "No property interests have been recorded yet."
+                          : `No ${filter.replace("_", " ")} interests found matching your criteria.`}
+                      </p>
+                      {(propertyFilter !== "all" || unitFilter !== "all" || interestsSearchTerm) && (
+                        <button
+                          className="clear-all-filters-btn"
+                          onClick={() => {
+                            setFilter("all");
+                            setPropertyFilter("all");
+                            setUnitFilter("all");
+                            setInterestsSearchTerm("");
+                          }}
+                        >
+                          Clear All Filters
+                        </button>
+                      )}
                     </div>
                   ) : (
-                    <div className="interests-grid">
-                      {interests.map((interest) => (
-                        <div key={interest.id} className="interest-card">
-                          <div className="interest-header">
-                            <div className="interest-type">
-                              {interest.user_id ? (
-                                <span className="type-badge type-signed-in">
-                                  <UserCheck size={14} />
-                                  Signed-in User
-                                </span>
-                              ) : (
-                                <span className="type-badge type-guest">
-                                  <Users size={14} />
-                                  Guest
-                                </span>
-                              )}
+                    <>
+                      <div className="results-summary">
+                        <span className="results-count">
+                          Showing {filteredInterests.length} of {interests.length} interests
+                        </span>
+                      </div>
+
+                      <div className="interests-grid">
+                        {filteredInterests.map((interest) => (
+                          <div
+                            key={interest.id}
+                            className={`interest-card ${
+                              !isInterestActive(interest) ? "expired" : "active"
+                            }`}
+                          >
+                            {/* Card Header */}
+                            <div className="card-header">
+                              <div className="user-type-indicator">
+                                {interest.user_id ? (
+                                  <div className="user-badge signed-in">
+                                    <UserCheck size={16} />
+                                    <span>Registered User</span>
+                                  </div>
+                                ) : (
+                                  <div className="user-badge guest">
+                                    <Users size={16} />
+                                    <span>Guest User</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="card-actions">
+                                {isInterestActive(interest) && (
+                                  <button
+                                    className="action-btn primary"
+                                    onClick={() => openNotificationModal(interest)}
+                                    title="Send availability notification"
+                                  >
+                                    <Bell size={16} />
+                                  </button>
+                                )}
+                                <button
+                                  className="action-btn danger"
+                                  onClick={() => deleteInterest(interest.id)}
+                                  title="Delete interest"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
                             </div>
-                            <div className="interest-actions">
-                              <button
-                                className="action-btn action-delete"
-                                onClick={() => deleteInterest(interest.id)}
-                                title="Delete interest"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
- 
-                          <div className="interest-content">
-                            <div className="interest-main">
-                              <h3 className="property-name">
-                                {interest.property_name}
-                              </h3>
-                              <p className="unit-type">
-                                {interest.unit_type_name}
-                              </p>
- 
-                              <div className="contact-info">
-                                <div className="contact-item">
-                                  <UserCheck size={16} />
-                                  <span>{interest.contact_name}</span>
-                                </div>
-                                <div className="contact-item">
-                                  <Mail size={16} />
-                                  <span>{interest.contact_email}</span>
-                                </div>
-                                <div className="contact-item">
-                                  <Phone size={16} />
-                                  <span>{interest.contact_phone}</span>
+
+                            {/* Card Content */}
+                            <div className="card-content">
+                              <div className="contact-section">
+                                <h3 className="contact-name">{interest.contact_name}</h3>
+                                <div className="contact-details">
+                                  <div className="contact-item">
+                                    <Mail size={14} />
+                                    <span>{interest.contact_email}</span>
+                                  </div>
+                                  <div className="contact-item">
+                                    <Phone size={14} />
+                                    <span>{interest.contact_phone}</span>
+                                  </div>
                                 </div>
                               </div>
- 
+
+                              <div className="property-section">
+                                <div className="property-header">
+                                  <Building size={18} />
+                                  <h4>{interest.property_name}</h4>
+                                </div>
+                                <div className="unit-info">
+                                  <Home size={14} />
+                                  <span>{interest.unit_type_name}</span>
+                                </div>
+                              </div>
+
                               <div className="interest-details">
-                                <div className="detail-item">
-                                  <Calendar size={16} />
+                                <div className="detail-row">
+                                  <Calendar size={14} />
                                   <span>
-                                    Notify within: {interest.timeframe_months}{" "}
-                                    months
+                                    Expires: {interest.valid_until
+                                      ? new Date(interest.valid_until).toLocaleDateString()
+                                      : "N/A"}
                                   </span>
                                 </div>
+                                <div className="detail-row">
+                                  <Clock size={14} />
+                                  <span>Timeframe: {getTimeframeText(interest.timeframe_months)}</span>
+                                </div>
                               </div>
- 
-                              {interest.special_requests && (
-                                <div className="special-requests">
-                                  <MessageSquare size={16} />
-                                  <p>{interest.special_requests}</p>
+                            </div>
+
+                            {/* Notification History */}
+                            <div className="notification-section">
+                              <div className="notification-header">
+                                <MessageSquare size={14} />
+                                <span className="notification-count">
+                                  {interest.notifications?.length || 0} notifications sent
+                                </span>
+                              </div>
+                              {interest.notifications && interest.notifications.length > 0 && (
+                                <div className="recent-notifications">
+                                  {interest.notifications.slice(0, 2).map((notification) => (
+                                    <div key={notification.id} className="notification-preview">
+                                      <span className={`notification-status ${notification.success ? "success" : "failed"}`}>
+                                        {notification.success ? <CheckCircle size={12} /> : <AlertTriangle size={12} />}
+                                      </span>
+                                      <span className="notification-date">
+                                        {new Date(notification.sent_at).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {interest.notifications.length > 2 && (
+                                    <span className="more-notifications">
+                                      +{interest.notifications.length - 2} more
+                                    </span>
+                                  )}
                                 </div>
                               )}
                             </div>
-                            <div className="interest-footer">
-                              <span className="created-date">
-                                Created:{" "}
-                                {new Date(
-                                  interest.created_at
-                                ).toLocaleDateString()}
-                              </span>
+
+                            {/* Special Requests */}
+                            {interest.special_requests && (
+                              <div className="special-requests">
+                                <div className="special-header">
+                                  <AlertTriangle size={14} />
+                                  <span>Special Requests</span>
+                                </div>
+                                <p>{interest.special_requests}</p>
+                              </div>
+                            )}
+
+                            {/* Card Footer */}
+                            <div className="card-footer">
+                              <div className="created-date">
+                                <span>Created {new Date(interest.created_at).toLocaleDateString()}</span>
+                              </div>
+                              <div className={`status-badge ${isInterestActive(interest) ? "active" : "expired"}`}>
+                                {isInterestActive(interest) ? "Active" : "Expired"}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
+
+                {/* Notification Modal */}
+                {showNotificationModal && selectedInterest && (
+                  <div
+                    className="notification-modal-overlay"
+                    onClick={() => setShowNotificationModal(false)}
+                  >
+                    <div
+                      className="notification-modal"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="notification-modal-header">
+                        <h3>Send Availability Notification</h3>
+                        <button
+                          onClick={() => setShowNotificationModal(false)}
+                          className="notification-modal-close"
+                        >
+                          <X size={24} />
+                        </button>
+                      </div>
+
+                      <div className="notification-modal-content">
+                        <div className="notification-form-group">
+                          <label>
+                            Recipient: {selectedInterest.contact_name}
+                          </label>
+                          <p className="text-sm text-gray-600">
+                            Phone: {selectedInterest.contact_phone}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Property: {selectedInterest.property_name} (
+                            {selectedInterest.unit_type_name})
+                          </p>
+                        </div>
+
+                        <div className="notification-form-group">
+                          <div className="message-header">
+                            <label htmlFor="notification-message">
+                              Notification Message
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setEditingMessage(!editingMessage)}
+                              className="edit-message-btn"
+                            >
+                              <Edit3 size={14} />
+                              {editingMessage ? "Use Template" : "Edit Message"}
+                            </button>
+                          </div>
+                          <textarea
+                            id="notification-message"
+                            value={notificationMessage}
+                            onChange={(e) =>
+                              setNotificationMessage(e.target.value)
+                            }
+                            placeholder="Enter the notification message..."
+                            rows="8"
+                            readOnly={!editingMessage}
+                            className={editingMessage ? "editable" : "readonly"}
+                          />
+                          {!editingMessage && (
+                            <p className="template-note">
+                              This is a pre-filled template. Click "Edit
+                              Message" to customize.
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="notification-modal-actions">
+                          <button
+                            type="button"
+                            onClick={() => setShowNotificationModal(false)}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            onClick={sendInterestNotification}
+                            disabled={
+                              sendingNotification || !notificationMessage.trim()
+                            }
+                          >
+                            {sendingNotification ? (
+                              "Sending..."
+                            ) : (
+                              <>
+                                <Send size={16} />
+                                Send Notification
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
-          */}
 
           {activeTab === "message-templates" && (
             <div className="templates-section">
@@ -1288,11 +1719,10 @@ const AdminDashboard = () => {
                   <div className="flex items-center gap-3 mb-6">
                     <Bell className="text-indigo-600" size={24} />
                     <div>
-                      <h2 className="text-xl font-semibold">
-                        Booking Notifications
-                      </h2>
+                      <h2 className="text-xl font-semibold">Notifications</h2>
                       <p className="text-sm text-gray-600">
-                        Send automated notifications to booking customers
+                        Send automated notifications to customers and manage
+                        interests
                       </p>
                     </div>
                   </div>
@@ -1325,12 +1755,18 @@ const AdminDashboard = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                                Confirmed
-                              </span>
+                              {booking.type === "interest" ? (
+                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                                  Interest
+                                </span>
+                              ) : (
+                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                                  Confirmed
+                                </span>
+                              )}
                               <span className="text-sm text-gray-500">
                                 {new Date(
-                                  booking.appointment_date
+                                  booking.appointment_date || booking.created_at
                                 ).toLocaleDateString()}
                               </span>
                             </div>
@@ -1348,34 +1784,65 @@ const AdminDashboard = () => {
                           </div>
 
                           <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={() =>
-                                sendNotification(booking.id, "confirmation")
-                              }
-                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
-                            >
-                              <CheckCircle size={14} />
-                              Send Confirmation
-                            </button>
-                            <button
-                              onClick={() =>
-                                sendNotification(booking.id, "reminder")
-                              }
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
-                            >
-                              <Clock size={14} />
-                              Send Reminder
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedBooking(booking);
-                                setNotificationType("custom");
-                              }}
-                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
-                            >
-                              <MessageSquare size={14} />
-                              Custom Message
-                            </button>
+                            {booking.type === "interest" ? (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    sendNotification(
+                                      booking.id,
+                                      "express_interest",
+                                      null,
+                                      true
+                                    )
+                                  }
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
+                                >
+                                  <Heart size={14} />
+                                  Send Interest Notification
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setNotificationType("custom");
+                                  }}
+                                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
+                                >
+                                  <MessageSquare size={14} />
+                                  Custom Message
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    sendNotification(booking.id, "confirmation")
+                                  }
+                                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
+                                >
+                                  <CheckCircle size={14} />
+                                  Send Confirmation
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    sendNotification(booking.id, "reminder")
+                                  }
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 rounded-lg flex items-center gap-2 text-sm"
+                                >
+                                  <Clock size={14} />
+                                  Send Reminder
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setNotificationType("custom");
+                                  }}
+                                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
+                                >
+                                  <MessageSquare size={14} />
+                                  Custom Message
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))
@@ -1471,29 +1938,26 @@ const AdminDashboard = () => {
                 <div className="activity-tabs">
                   <button
                     className={`tab-button ${
-                      activeTab === "all" ? "active" : ""
+                      activityTab === "all" ? "active" : ""
                     }`}
-                    onClick={() => setActiveTab("all")}
+                    onClick={() => setActivityTab("all")}
                   >
                     All Activities ({activities.length})
                   </button>
                   <button
                     className={`tab-button ${
-                      activeTab === "site_visit" ? "active" : ""
+                      activityTab === "site_visit" ? "active" : ""
                     }`}
-                    onClick={() => setActiveTab("site_visit")}
+                    onClick={() => setActivityTab("site_visit")}
                   >
                     Site Visits (
-                    {
-                      activities.filter((a) => a.type === "site_visit").length
-                    }
-                    )
+                    {activities.filter((a) => a.type === "site_visit").length})
                   </button>
                   <button
                     className={`tab-button ${
-                      activeTab === "property_interest" ? "active" : ""
+                      activityTab === "property_interest" ? "active" : ""
                     }`}
-                    onClick={() => setActiveTab("property_interest")}
+                    onClick={() => setActivityTab("property_interest")}
                   >
                     Interests (
                     {
@@ -1504,9 +1968,9 @@ const AdminDashboard = () => {
                   </button>
                   <button
                     className={`tab-button ${
-                      activeTab === "booking_approval" ? "active" : ""
+                      activityTab === "booking_approval" ? "active" : ""
                     }`}
-                    onClick={() => setActiveTab("booking_approval")}
+                    onClick={() => setActivityTab("booking_approval")}
                   >
                     Approvals (
                     {
@@ -1761,9 +2225,7 @@ const AdminDashboard = () => {
                     </div>
                     <div className="communication-card-content">
                       <p>
-                        {settings.sms_api_key
-                          ? "Configured"
-                          : "Not configured"}
+                        {settings.sms_api_key ? "Configured" : "Not configured"}
                       </p>
                     </div>
                   </div>
@@ -1940,9 +2402,7 @@ const AdminDashboard = () => {
         >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>
-                {editingProperty ? "Edit Property" : "Add New Property"}
-              </h3>
+              <h3>{editingProperty ? "Edit Property" : "Add New Property"}</h3>
               <button
                 className="modal-close"
                 onClick={() => setShowPropertyModal(false)}

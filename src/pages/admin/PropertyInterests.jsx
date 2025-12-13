@@ -14,6 +14,10 @@ import {
   Bell,
   X,
   Send,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Edit3,
 } from "lucide-react";
 import "./PropertyInterests.css";
 
@@ -25,6 +29,7 @@ const PropertyInterests = () => {
   const [selectedInterest, setSelectedInterest] = useState(null);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [sendingNotification, setSendingNotification] = useState(false);
+  const [editingMessage, setEditingMessage] = useState(false);
 
   useEffect(() => {
     fetchInterests();
@@ -88,13 +93,16 @@ Victor Springs Team
 
     setSendingNotification(true);
     try {
-      // Use the custom notification endpoint
+      // Use the custom notification endpoint with vacancy_alert_id for logging
       await api.post("/notifications/send-custom", {
         phone: selectedInterest.contact_phone,
         message: notificationMessage,
+        vacancy_alert_id: selectedInterest.id,
       });
 
-      // Update the interest to mark as notified (you might want to add a backend field for this)
+      // Refresh the interests to show updated notification history
+      await fetchInterests();
+
       toast.success("Notification sent successfully!");
       setShowNotificationModal(false);
       setSelectedInterest(null);
@@ -142,10 +150,10 @@ Victor Springs Team
         {/* Header */}
         <div className="property-interests-header">
           <div className="header-content">
-            <h1 className="page-title">Property Interests</h1>
+            <h1 className="page-title">Property Interests Management</h1>
             <p className="page-subtitle">
-              Manage property interest requests from both signed-in users and
-              guests
+              Track and manage property interest requests with detailed
+              notification history
             </p>
           </div>
         </div>
@@ -185,6 +193,18 @@ Victor Springs Team
               <p className="stat-label">Guest Users</p>
             </div>
           </div>
+
+          <div className="stat-card">
+            <div className="stat-icon expired">
+              <AlertTriangle size={24} />
+            </div>
+            <div className="stat-content">
+              <h3 className="stat-number">
+                {interests.filter((i) => !isInterestActive(i)).length}
+              </h3>
+              <p className="stat-label">Expired Interests</p>
+            </div>
+          </div>
         </div>
 
         {/* Filters */}
@@ -215,8 +235,8 @@ Victor Springs Team
           </div>
         </div>
 
-        {/* Interests Table */}
-        <div className="data-table">
+        {/* Interests List */}
+        <div className="interests-list-container">
           {filteredInterests.length === 0 ? (
             <div className="empty-state">
               <Users size={48} />
@@ -228,82 +248,177 @@ Victor Springs Team
               </p>
             </div>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Contact</th>
-                  <th>Property</th>
-                  <th>Unit Type</th>
-                  <th>Timeframe</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInterests.map((interest) => (
-                  <tr key={interest.id}>
-                    <td>
+            <div className="interests-list">
+              {filteredInterests.map((interest) => (
+                <div
+                  key={interest.id}
+                  className={`interest-item ${
+                    !isInterestActive(interest) ? "expired" : ""
+                  }`}
+                >
+                  {/* Header with type and actions */}
+                  <div className="interest-header">
+                    <div className="interest-type">
                       {interest.user_id ? (
                         <span className="type-badge type-signed-in">
                           <UserCheck size={14} />
-                          User
+                          Signed-in User
                         </span>
                       ) : (
                         <span className="type-badge type-guest">
                           <Users size={14} />
-                          Guest
+                          Guest User
                         </span>
                       )}
-                    </td>
-                    <td>
-                      <div>
-                        <div className="font-semibold">
-                          {interest.contact_name}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {interest.contact_email}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {interest.contact_phone}
-                        </div>
-                      </div>
-                    </td>
-                    <td>{interest.property_name}</td>
-                    <td>{interest.unit_type_name}</td>
-                    <td>{getTimeframeText(interest.timeframe_months)}</td>
-                    <td>
-                      {isInterestActive(interest) ? (
-                        <span className="status-badge active">Active</span>
-                      ) : (
-                        <span className="status-badge expired">Expired</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="flex gap-2">
-                        {isInterestActive(interest) && (
-                          <button
-                            className="notify-btn"
-                            onClick={() => openNotificationModal(interest)}
-                            title="Send availability notification"
-                          >
-                            <Bell size={14} />
-                            Notify
-                          </button>
-                        )}
+                    </div>
+                    <div className="interest-actions">
+                      {isInterestActive(interest) && (
                         <button
-                          className="btn-delete"
-                          onClick={() => deleteInterest(interest.id)}
-                          title="Delete interest"
+                          className="action-btn notify"
+                          onClick={() => openNotificationModal(interest)}
+                          title="Send availability notification"
                         >
-                          <Trash2 size={16} />
+                          <Bell size={16} />
+                          Notify
                         </button>
+                      )}
+                      <button
+                        className="action-btn delete"
+                        onClick={() => deleteInterest(interest.id)}
+                        title="Delete interest"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Main content */}
+                  <div className="interest-content">
+                    <div className="interest-main">
+                      <div className="contact-info">
+                        <h3
+                          className={`contact-name ${
+                            !isInterestActive(interest) ? "expired-text" : ""
+                          }`}
+                        >
+                          {interest.contact_name}
+                        </h3>
+                        <div className="contact-details">
+                          <div className="contact-item">
+                            <Mail size={14} />
+                            <span>{interest.contact_email}</span>
+                          </div>
+                          <div className="contact-item">
+                            <Phone size={14} />
+                            <span>{interest.contact_phone}</span>
+                          </div>
+                        </div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+                      <div className="property-info">
+                        <h4 className="property-name">
+                          {interest.property_name}
+                        </h4>
+                        <p className="unit-type">{interest.unit_type_name}</p>
+                        <div className="interest-details">
+                          <div className="detail-item">
+                            <Calendar size={14} />
+                            <span>
+                              Expires:{" "}
+                              {interest.valid_until
+                                ? new Date(
+                                    interest.valid_until
+                                  ).toLocaleDateString()
+                                : "N/A"}
+                            </span>
+                          </div>
+                          <div className="detail-item">
+                            <Clock size={14} />
+                            <span>
+                              Timeframe:{" "}
+                              {getTimeframeText(interest.timeframe_months)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notification history */}
+                    <div className="notification-history">
+                      <h5>Notification History</h5>
+                      {interest.notifications &&
+                      interest.notifications.length > 0 ? (
+                        <div className="notifications-list">
+                          {interest.notifications.map((notification) => (
+                            <div
+                              key={notification.id}
+                              className="notification-item"
+                            >
+                              <div className="notification-header">
+                                <span className="notification-type">
+                                  {notification.message_type}
+                                </span>
+                                <span
+                                  className={`notification-status ${
+                                    notification.success ? "success" : "failed"
+                                  }`}
+                                >
+                                  {notification.success ? (
+                                    <CheckCircle size={12} />
+                                  ) : (
+                                    <AlertTriangle size={12} />
+                                  )}
+                                  {notification.delivery_method}
+                                </span>
+                              </div>
+                              <div className="notification-content">
+                                <p className="notification-message">
+                                  {notification.message_content}
+                                </p>
+                                <span className="notification-date">
+                                  {new Date(
+                                    notification.sent_at
+                                  ).toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="no-notifications">
+                          No notifications sent yet
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Special requests */}
+                    {interest.special_requests && (
+                      <div className="special-requests">
+                        <MessageSquare size={14} />
+                        <p>{interest.special_requests}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer with status */}
+                  <div className="interest-footer">
+                    <div className="interest-meta">
+                      <span className="created-date">
+                        Created:{" "}
+                        {new Date(interest.created_at).toLocaleDateString()}
+                      </span>
+                      <span
+                        className={`status-indicator ${
+                          isInterestActive(interest) ? "active" : "expired"
+                        }`}
+                      >
+                        {isInterestActive(interest) ? "Active" : "Expired"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
@@ -340,16 +455,34 @@ Victor Springs Team
                 </div>
 
                 <div className="notification-form-group">
-                  <label htmlFor="notification-message">
-                    Notification Message
-                  </label>
+                  <div className="message-header">
+                    <label htmlFor="notification-message">
+                      Notification Message
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setEditingMessage(!editingMessage)}
+                      className="edit-message-btn"
+                    >
+                      <Edit3 size={14} />
+                      {editingMessage ? "Use Template" : "Edit Message"}
+                    </button>
+                  </div>
                   <textarea
                     id="notification-message"
                     value={notificationMessage}
                     onChange={(e) => setNotificationMessage(e.target.value)}
                     placeholder="Enter the notification message..."
                     rows="8"
+                    readOnly={!editingMessage}
+                    className={editingMessage ? "editable" : "readonly"}
                   />
+                  {!editingMessage && (
+                    <p className="template-note">
+                      This is a pre-filled template. Click "Edit Message" to
+                      customize.
+                    </p>
+                  )}
                 </div>
 
                 <div className="notification-modal-actions">
