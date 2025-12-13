@@ -34,6 +34,7 @@ import {
   Send,
   Search,
   User,
+  Clock,
 } from "lucide-react";
 import "./AdminDashboard.css";
 
@@ -44,7 +45,10 @@ const AdminDashboard = () => {
   const [reports, setReports] = useState(null);
   const [properties, setProperties] = useState([]);
   const [users, setUsers] = useState([]);
-  const [bookings, setBookings] = useState([]);
+  const [siteVisits, setSiteVisits] = useState([]);
+  const [guestSiteVisits, setGuestSiteVisits] = useState([]);
+  const [userSiteVisits, setUserSiteVisits] = useState([]);
+  const [siteVisitsTab, setSiteVisitsTab] = useState("all");
   const [loading, setLoading] = useState(true);
   const [showPropertyModal, setShowPropertyModal] = useState(false);
   const [editingProperty, setEditingProperty] = useState(null);
@@ -100,8 +104,8 @@ const AdminDashboard = () => {
       fetchProperties();
     } else if (activeTab === "users") {
       fetchUsers();
-    } else if (activeTab === "bookings") {
-      fetchBookings();
+    } else if (activeTab === "site-visits") {
+      fetchSiteVisits();
     } else if (activeTab === "property-interests") {
       fetchInterests();
     } else if (activeTab === "communications") {
@@ -145,12 +149,19 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchBookings = async () => {
+  const fetchSiteVisits = async () => {
     try {
-      const res = await api.get("/admin/bookings");
-      setBookings(res.data);
+      const [allRes, guestRes, userRes] = await Promise.all([
+        api.get("/admin/site-visits"),
+        api.get("/admin/site-visits/guests"),
+        api.get("/admin/site-visits/users"),
+      ]);
+      setSiteVisits(allRes.data);
+      setGuestSiteVisits(guestRes.data);
+      setUserSiteVisits(userRes.data);
     } catch (error) {
-      toast.error("Failed to load bookings");
+      console.error("Failed to load site visits:", error);
+      toast.error("Failed to load site visits");
     }
   };
 
@@ -427,22 +438,48 @@ const AdminDashboard = () => {
     }
   };
 
-  const updateBookingStatus = async (bookingId, status, paymentStatus) => {
+  const approveSiteVisit = async (visitId) => {
+    if (!window.confirm("Are you sure you want to approve this site visit?")) {
+      return;
+    }
     try {
-      await api.put(`/bookings/${bookingId}/status`, {
-        status,
-        payment_status: paymentStatus,
-      });
-      setBookings(
-        bookings.map((b) =>
-          b.id === bookingId
-            ? { ...b, status, payment_status: paymentStatus }
-            : b
+      await api.put(`/admin/site-visits/${visitId}/approve`);
+      setSiteVisits(
+        siteVisits.map((v) =>
+          v.id === visitId ? { ...v, status: "confirmed" } : v
         )
       );
-      toast.success("Booking updated");
+      toast.success("Site visit approved successfully");
     } catch (error) {
-      toast.error("Failed to update booking");
+      toast.error("Failed to approve site visit");
+    }
+  };
+
+  const declineSiteVisit = async (visitId) => {
+    const reason = prompt("Reason for declining (optional):");
+    try {
+      await api.put(`/admin/site-visits/${visitId}/decline`, { reason });
+      setSiteVisits(
+        siteVisits.map((v) =>
+          v.id === visitId ? { ...v, status: "cancelled" } : v
+        )
+      );
+      toast.success("Site visit declined");
+    } catch (error) {
+      toast.error("Failed to decline site visit");
+    }
+  };
+
+  const deleteSiteVisit = async (visitId) => {
+    if (!window.confirm("Are you sure you want to delete this site visit?")) {
+      return;
+    }
+    try {
+      await api.delete(`/admin/site-visits/${visitId}`);
+      setSiteVisits(siteVisits.filter((v) => v.id !== visitId));
+      toast.success("Site visit deleted");
+    } catch (error) {
+      toast.error("Failed to delete site visit");
     }
   };
 
@@ -512,7 +549,7 @@ const AdminDashboard = () => {
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "properties", label: "Properties", icon: Building },
     { id: "users", label: "Users", icon: Users },
-    { id: "bookings", label: "Bookings", icon: Calendar },
+    { id: "site-visits", label: "Site Visits", icon: Calendar },
     { id: "property-interests", label: "Property Interests", icon: Heart },
     { id: "communications", label: "Communications", icon: MessageSquare },
     { id: "message-templates", label: "Message Templates", icon: FileText },
@@ -548,14 +585,14 @@ const AdminDashboard = () => {
               {reports ? (
                 <div className="stats-grid">
                   <div className="stat-card">
-                    <div className="stat-icon revenue">
-                      <CreditCard size={24} />
+                    <div className="stat-icon properties">
+                      <Building size={24} />
                     </div>
                     <div className="stat-content">
                       <div className="stat-value">
-                        KES {reports.stats.revenue.toLocaleString()}
+                        {reports.stats.properties}
                       </div>
-                      <div className="stat-label">Total Revenue</div>
+                      <div className="stat-label">Total Properties</div>
                     </div>
                   </div>
                   <div className="stat-card">
@@ -564,7 +601,7 @@ const AdminDashboard = () => {
                     </div>
                     <div className="stat-content">
                       <div className="stat-value">{reports.stats.bookings}</div>
-                      <div className="stat-label">Total Bookings</div>
+                      <div className="stat-label">Total Site Visits</div>
                     </div>
                   </div>
                   <div className="stat-card">
@@ -577,12 +614,16 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-icon venues">
-                      <Building size={24} />
+                    <div className="stat-icon interests">
+                      <Heart size={24} />
                     </div>
                     <div className="stat-content">
-                      <div className="stat-value">{reports.stats.venues}</div>
-                      <div className="stat-label">Total Venues</div>
+                      <div className="stat-value">
+                        {reports.stats.interests_this_month || 0}
+                      </div>
+                      <div className="stat-label">
+                        Property Interests (This Month)
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -616,7 +657,9 @@ const AdminDashboard = () => {
                     {properties.map((property) => (
                       <tr
                         key={property.id}
-                        onClick={() => navigate(`/admin/properties/${property.id}`)}
+                        onClick={() =>
+                          navigate(`/admin/properties/${property.id}`)
+                        }
                         style={{ cursor: "pointer" }}
                       >
                         <td>{property.name}</td>
@@ -696,66 +739,122 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {activeTab === "bookings" && (
-            <div className="bookings-section">
-              <h2>Manage Bookings</h2>
+          {activeTab === "site-visits" && (
+            <div className="site-visits-section">
+              <div className="section-header">
+                <h2>Manage Site Visits</h2>
+              </div>
+
+              {/* Sub-tabs for site visits */}
+              <div className="site-visits-tabs">
+                <button
+                  className={`site-visits-tab ${
+                    siteVisitsTab === "all" ? "active" : ""
+                  }`}
+                  onClick={() => setSiteVisitsTab("all")}
+                >
+                  All Visits ({siteVisits.length})
+                </button>
+                <button
+                  className={`site-visits-tab ${
+                    siteVisitsTab === "guests" ? "active" : ""
+                  }`}
+                  onClick={() => setSiteVisitsTab("guests")}
+                >
+                  Guest Visits ({guestSiteVisits.length})
+                </button>
+                <button
+                  className={`site-visits-tab ${
+                    siteVisitsTab === "users" ? "active" : ""
+                  }`}
+                  onClick={() => setSiteVisitsTab("users")}
+                >
+                  User Visits ({userSiteVisits.length})
+                </button>
+              </div>
+
               <div className="data-table">
                 <table>
                   <thead>
                     <tr>
                       <th>ID</th>
-                      <th>User</th>
-                      <th>Venue</th>
+                      <th>Type</th>
+                      <th>Contact</th>
+                      <th>Property</th>
+                      <th>Unit Type</th>
                       <th>Date</th>
                       <th>Status</th>
-                      <th>Payment</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.map((booking) => (
-                      <tr key={booking.id}>
-                        <td>{booking.id}</td>
-                        <td>{booking.user}</td>
-                        <td>{booking.venue}</td>
+                    {(siteVisitsTab === "all"
+                      ? siteVisits
+                      : siteVisitsTab === "guests"
+                      ? guestSiteVisits
+                      : userSiteVisits
+                    ).map((visit) => (
+                      <tr key={visit.id}>
+                        <td>{visit.id}</td>
                         <td>
-                          {new Date(booking.event_date).toLocaleDateString()}
-                        </td>
-                        <td>
-                          <select
-                            value={booking.status}
-                            onChange={(e) =>
-                              updateBookingStatus(
-                                booking.id,
-                                e.target.value,
-                                booking.payment_status
-                              )
-                            }
+                          <span
+                            className={`user-type-badge ${
+                              visit.is_guest ? "guest" : "user"
+                            }`}
                           >
-                            <option value="Pending">Pending</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Rejected">Rejected</option>
-                          </select>
+                            {visit.is_guest ? "Guest" : "User"}
+                          </span>
                         </td>
                         <td>
-                          <select
-                            value={booking.payment_status}
-                            onChange={(e) =>
-                              updateBookingStatus(
-                                booking.id,
-                                booking.status,
-                                e.target.value
-                              )
-                            }
-                          >
-                            <option value="Unpaid">Unpaid</option>
-                            <option value="Paid">Paid</option>
-                          </select>
+                          <div>
+                            <div className="font-semibold">
+                              {visit.contact_name}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {visit.contact_email}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {visit.contact_phone}
+                            </div>
+                          </div>
+                        </td>
+                        <td>{visit.property_name}</td>
+                        <td>{visit.unit_type_name}</td>
+                        <td>
+                          {new Date(
+                            visit.appointment_date
+                          ).toLocaleDateString()}
                         </td>
                         <td>
-                          <button className="btn-view">
-                            <Eye size={16} />
-                          </button>
+                          <span className={`status-badge ${visit.status}`}>
+                            {visit.status}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="flex gap-2">
+                            {visit.status === "pending" && (
+                              <>
+                                <button
+                                  className="btn-approve"
+                                  onClick={() => approveSiteVisit(visit.id)}
+                                >
+                                  <CheckCircle size={16} />
+                                </button>
+                                <button
+                                  className="btn-reject"
+                                  onClick={() => declineSiteVisit(visit.id)}
+                                >
+                                  <XCircle size={16} />
+                                </button>
+                              </>
+                            )}
+                            <button
+                              className="btn-delete"
+                              onClick={() => deleteSiteVisit(visit.id)}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -765,7 +864,8 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {activeTab === "property-interests" && (
+          {/* Commented out Property Interests Section */}
+          {/* {activeTab === "property-interests" && (
             <div className="property-interests-section">
               <div className="property-interests-container">
                 <div className="property-interests-header">
@@ -777,7 +877,7 @@ const AdminDashboard = () => {
                     </p>
                   </div>
                 </div>
-
+ 
                 <div className="stats-grid">
                   <div className="stat-card">
                     <div className="stat-icon">
@@ -811,7 +911,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
-
+ 
                 <div className="filters-section">
                   <div className="filter-buttons">
                     <button
@@ -845,7 +945,7 @@ const AdminDashboard = () => {
                     </button>
                   </div>
                 </div>
-
+ 
                 <div className="interests-list">
                   {interests.length === 0 ? (
                     <div className="empty-state">
@@ -881,7 +981,7 @@ const AdminDashboard = () => {
                               </button>
                             </div>
                           </div>
-
+ 
                           <div className="interest-content">
                             <div className="interest-main">
                               <h3 className="property-name">
@@ -890,7 +990,7 @@ const AdminDashboard = () => {
                               <p className="unit-type">
                                 {interest.unit_type_name}
                               </p>
-
+ 
                               <div className="contact-info">
                                 <div className="contact-item">
                                   <UserCheck size={16} />
@@ -905,7 +1005,7 @@ const AdminDashboard = () => {
                                   <span>{interest.contact_phone}</span>
                                 </div>
                               </div>
-
+ 
                               <div className="interest-details">
                                 <div className="detail-item">
                                   <Calendar size={16} />
@@ -915,851 +1015,14 @@ const AdminDashboard = () => {
                                   </span>
                                 </div>
                               </div>
-
+ 
                               {interest.special_requests && (
                                 <div className="special-requests">
                                   <MessageSquare size={16} />
                                   <p>{interest.special_requests}</p>
                                 </div>
                               )}
-
-                              {activeTab === "message-templates" && (
-                                <div className="message-templates-section">
-                                  <div className="message-templates-page">
-                                    <div className="page-header">
-                                      <div className="header-content">
-                                        <MessageSquare
-                                          size={32}
-                                          className="header-icon"
-                                        />
-                                        <div>
-                                          <h1 className="page-title">
-                                            Message Templates
-                                          </h1>
-                                          <p className="page-subtitle">
-                                            Customize notification messages sent
-                                            to users
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="global-settings-section">
-                                      <div className="section-header">
-                                        <Settings size={20} />
-                                        <h2>Global Settings</h2>
-                                      </div>
-
-                                      <div className="global-settings-grid">
-                                        <div className="setting-item">
-                                          <label>
-                                            <Phone size={16} />
-                                            Support Phone
-                                          </label>
-                                          <input
-                                            type="text"
-                                            value={
-                                              globalSettings.support_phone || ""
-                                            }
-                                            onChange={(e) =>
-                                              setGlobalSettings((prev) => ({
-                                                ...prev,
-                                                support_phone: e.target.value,
-                                              }))
-                                            }
-                                            placeholder="+254 700 000 000"
-                                          />
-                                        </div>
-
-                                        <div className="setting-item">
-                                          <label>
-                                            <Globe size={16} />
-                                            Website URL
-                                          </label>
-                                          <input
-                                            type="url"
-                                            value={
-                                              globalSettings.website_url || ""
-                                            }
-                                            onChange={(e) =>
-                                              setGlobalSettings((prev) => ({
-                                                ...prev,
-                                                website_url: e.target.value,
-                                              }))
-                                            }
-                                            placeholder="https://victor-springs.com"
-                                          />
-                                        </div>
-
-                                        <div className="setting-item">
-                                          <label>
-                                            <Building size={16} />
-                                            Company Name
-                                          </label>
-                                          <input
-                                            type="text"
-                                            value={
-                                              globalSettings.company_name || ""
-                                            }
-                                            onChange={(e) =>
-                                              setGlobalSettings((prev) => ({
-                                                ...prev,
-                                                company_name: e.target.value,
-                                              }))
-                                            }
-                                            placeholder="Victor Springs"
-                                          />
-                                        </div>
-
-                                        <div className="setting-item">
-                                          <label>
-                                            <Mail size={16} />
-                                            Support Email
-                                          </label>
-                                          <input
-                                            type="email"
-                                            value={
-                                              globalSettings.support_email || ""
-                                            }
-                                            onChange={(e) =>
-                                              setGlobalSettings((prev) => ({
-                                                ...prev,
-                                                support_email: e.target.value,
-                                              }))
-                                            }
-                                            placeholder="support@victor-springs.com"
-                                          />
-                                        </div>
-                                      </div>
-
-                                      <div className="settings-actions">
-                                        <button
-                                          onClick={() =>
-                                            handleUpdateGlobalSettings(
-                                              globalSettings
-                                            )
-                                          }
-                                          className="save-settings-btn"
-                                        >
-                                          <Save size={16} />
-                                          Save Global Settings
-                                        </button>
-                                      </div>
-                                    </div>
-
-                                    <div className="templates-section">
-                                      <div className="section-header">
-                                        <MessageSquare size={20} />
-                                        <h2>Message Templates</h2>
-                                      </div>
-
-                                      <div className="templates-grid">
-                                        {Object.entries(templates).map(
-                                          ([key, template]) => (
-                                            <div
-                                              key={key}
-                                              className="template-card"
-                                            >
-                                              <div className="template-header">
-                                                <div className="template-icon">
-                                                  {key === "site_visit_request"
-                                                    ? "🏛️"
-                                                    : key ===
-                                                      "site_visit_confirmation"
-                                                    ? "✅"
-                                                    : key === "express_interest"
-                                                    ? "💝"
-                                                    : key === "unit_available"
-                                                    ? "🎉"
-                                                    : key ===
-                                                      "site_visit_reminder"
-                                                    ? "⏰"
-                                                    : key === "welcome"
-                                                    ? "🎉"
-                                                    : key ===
-                                                      "account_verification"
-                                                    ? "🔐"
-                                                    : key === "password_reset"
-                                                    ? "🔑"
-                                                    : "📱"}
-                                                </div>
-                                                <div className="template-info">
-                                                  <h3>
-                                                    {key
-                                                      .replace(/_/g, " ")
-                                                      .toUpperCase()}
-                                                  </h3>
-                                                  <p>{template.subject}</p>
-                                                </div>
-                                                <button
-                                                  onClick={() =>
-                                                    handleEditTemplate(
-                                                      key,
-                                                      template
-                                                    )
-                                                  }
-                                                  className="edit-template-btn"
-                                                  disabled={
-                                                    editingTemplate === key
-                                                  }
-                                                >
-                                                  <Edit3 size={16} />
-                                                  Edit
-                                                </button>
-                                              </div>
-
-                                              {editingTemplate === key ? (
-                                                <div className="template-editor">
-                                                  <div className="editor-field">
-                                                    <label>Subject Line</label>
-                                                    <input
-                                                      type="text"
-                                                      value={editedSubject}
-                                                      onChange={(e) =>
-                                                        setEditedSubject(
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      placeholder="Enter subject line"
-                                                    />
-                                                  </div>
-
-                                                  <div className="editor-field">
-                                                    <label>
-                                                      Message Content
-                                                    </label>
-                                                    <textarea
-                                                      value={editedMessage}
-                                                      onChange={(e) =>
-                                                        setEditedMessage(
-                                                          e.target.value
-                                                        )
-                                                      }
-                                                      placeholder="Enter message content"
-                                                      rows="12"
-                                                    />
-                                                  </div>
-
-                                                  <div className="variables-info">
-                                                    <h4>
-                                                      Available Variables:
-                                                    </h4>
-                                                    <div className="variables-list">
-                                                      {template.variables.map(
-                                                        (variable) => (
-                                                          <span
-                                                            key={variable}
-                                                            className="variable-tag"
-                                                          >
-                                                            {`{${variable}}`}
-                                                          </span>
-                                                        )
-                                                      )}
-                                                    </div>
-                                                    <p className="variables-note">
-                                                      Use curly braces{" "}
-                                                      {"{variable}"} to insert
-                                                      dynamic content
-                                                    </p>
-                                                  </div>
-
-                                                  <div className="editor-actions">
-                                                    <button
-                                                      onClick={() => {
-                                                        setEditingTemplate(
-                                                          null
-                                                        );
-                                                        setEditedSubject("");
-                                                        setEditedMessage("");
-                                                      }}
-                                                      className="cancel-btn"
-                                                      disabled={saving}
-                                                    >
-                                                      Cancel
-                                                    </button>
-                                                    <button
-                                                      onClick={
-                                                        handleSaveTemplate
-                                                      }
-                                                      className="save-btn"
-                                                      disabled={saving}
-                                                    >
-                                                      {saving ? (
-                                                        <>
-                                                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                                          Saving...
-                                                        </>
-                                                      ) : (
-                                                        <>
-                                                          <Save size={16} />
-                                                          Save Template
-                                                        </>
-                                                      )}
-                                                    </button>
-                                                  </div>
-                                                </div>
-                                              ) : (
-                                                <div className="template-preview">
-                                                  <pre className="message-preview">
-                                                    {template.message}
-                                                  </pre>
-                                                </div>
-                                              )}
-                                            </div>
-                                          )
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {activeTab === "notifications" && (
-                                <div className="notifications-section">
-                                  <div className="max-w-7xl mx-auto px-4 py-8">
-                                    <div className="mb-8">
-                                      <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                                        Notification Manager
-                                      </h1>
-                                      <p className="text-gray-600">
-                                        Manage automated notifications,
-                                        reminders, and confirmations for
-                                        bookings
-                                      </p>
-                                    </div>
-
-                                    <div className="bg-white rounded-lg shadow-md p-6">
-                                      <div className="flex items-center gap-3 mb-6">
-                                        <Bell
-                                          className="text-indigo-600"
-                                          size={24}
-                                        />
-                                        <div>
-                                          <h2 className="text-xl font-semibold">
-                                            Booking Notifications
-                                          </h2>
-                                          <p className="text-sm text-gray-600">
-                                            Send automated notifications to
-                                            booking customers
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      <div className="space-y-4">
-                                        {notificationBookings.length === 0 ? (
-                                          <div className="text-center py-8 text-gray-500">
-                                            <Calendar
-                                              size={48}
-                                              className="mx-auto mb-4 opacity-50"
-                                            />
-                                            <p>No bookings found</p>
-                                          </div>
-                                        ) : (
-                                          notificationBookings.map(
-                                            (booking) => (
-                                              <div
-                                                key={booking.id}
-                                                className="border border-gray-200 rounded-lg p-4"
-                                              >
-                                                <div className="flex items-center justify-between mb-3">
-                                                  <div className="flex items-center gap-3">
-                                                    <User
-                                                      size={20}
-                                                      className="text-gray-400"
-                                                    />
-                                                    <div>
-                                                      <h3 className="font-semibold">
-                                                        {booking.user_name}
-                                                      </h3>
-                                                      <p className="text-sm text-gray-600">
-                                                        {booking.user_email}
-                                                      </p>
-                                                    </div>
-                                                  </div>
-                                                  <div className="flex items-center gap-2">
-                                                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                                                      Confirmed
-                                                    </span>
-                                                    <span className="text-sm text-gray-500">
-                                                      {new Date(
-                                                        booking.appointment_date
-                                                      ).toLocaleDateString()}
-                                                    </span>
-                                                  </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-4 mb-3">
-                                                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                                                    <Phone size={14} />
-                                                    {booking.user_phone}
-                                                  </div>
-                                                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                                                    <Mail size={14} />
-                                                    {
-                                                      booking.property_name
-                                                    } - {booking.unit_type}
-                                                  </div>
-                                                </div>
-
-                                                <div className="flex flex-wrap gap-2">
-                                                  <button
-                                                    onClick={() =>
-                                                      sendNotification(
-                                                        booking.id,
-                                                        "confirmation"
-                                                      )
-                                                    }
-                                                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
-                                                  >
-                                                    <CheckCircle size={14} />
-                                                    Send Confirmation
-                                                  </button>
-                                                  <button
-                                                    onClick={() =>
-                                                      sendNotification(
-                                                        booking.id,
-                                                        "reminder"
-                                                      )
-                                                    }
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
-                                                  >
-                                                    <Clock size={14} />
-                                                    Send Reminder
-                                                  </button>
-                                                  <button
-                                                    onClick={() => {
-                                                      setSelectedBooking(
-                                                        booking
-                                                      );
-                                                      setNotificationType(
-                                                        "custom"
-                                                      );
-                                                    }}
-                                                    className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
-                                                  >
-                                                    <MessageSquare size={14} />
-                                                    Custom Message
-                                                  </button>
-                                                </div>
-                                              </div>
-                                            )
-                                          )
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {selectedBooking &&
-                                      notificationType === "custom" && (
-                                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                                          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                                            <h3 className="text-lg font-semibold mb-4">
-                                              Send Custom Message
-                                            </h3>
-                                            <p className="text-sm text-gray-600 mb-4">
-                                              To: {selectedBooking.user_name} (
-                                              {selectedBooking.user_phone})
-                                            </p>
-                                            <textarea
-                                              value={customMessage}
-                                              onChange={(e) =>
-                                                setCustomMessage(e.target.value)
-                                              }
-                                              placeholder="Enter your custom message..."
-                                              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-4"
-                                              rows={4}
-                                            />
-                                            <div className="flex justify-end gap-2">
-                                              <button
-                                                onClick={() => {
-                                                  setSelectedBooking(null);
-                                                  setCustomMessage("");
-                                                }}
-                                                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                                              >
-                                                Cancel
-                                              </button>
-                                              <button
-                                                onClick={() => {
-                                                  sendNotification(
-                                                    selectedBooking.id,
-                                                    "custom",
-                                                    customMessage
-                                                  );
-                                                  setSelectedBooking(null);
-                                                  setCustomMessage("");
-                                                }}
-                                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                                              >
-                                                <Send size={16} />
-                                                Send Message
-                                              </button>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-                                  </div>
-                                </div>
-                              )}
-
-                              {activeTab === "activity" && (
-                                <div className="activity-section">
-                                  <div className="activity-page">
-                                    <div className="activity-container">
-                                      <div className="activity-header">
-                                        <div className="header-content">
-                                          <ActivityIcon
-                                            className="header-icon"
-                                            size={32}
-                                          />
-                                          <div>
-                                            <h1 className="page-title">
-                                              Activity Management
-                                            </h1>
-                                            <p className="page-subtitle">
-                                              Track and manage user activities,
-                                              approvals, and requests
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      <div className="activity-filters">
-                                        <div className="search-bar">
-                                          <Search size={18} />
-                                          <input
-                                            type="text"
-                                            placeholder="Search activities..."
-                                            value={searchTerm}
-                                            onChange={(e) =>
-                                              setSearchTerm(e.target.value)
-                                            }
-                                            className="search-input"
-                                          />
-                                        </div>
-
-                                        <select
-                                          value={statusFilter}
-                                          onChange={(e) =>
-                                            setStatusFilter(e.target.value)
-                                          }
-                                          className="filter-select"
-                                        >
-                                          <option value="all">
-                                            All Status
-                                          </option>
-                                          <option value="pending">
-                                            Pending
-                                          </option>
-                                          <option value="approved">
-                                            Approved
-                                          </option>
-                                          <option value="rejected">
-                                            Rejected
-                                          </option>
-                                          <option value="active">Active</option>
-                                        </select>
-                                      </div>
-
-                                      <div className="activity-tabs">
-                                        <button
-                                          className={`tab-button ${
-                                            activeTab === "all" ? "active" : ""
-                                          }`}
-                                          onClick={() => setActiveTab("all")}
-                                        >
-                                          All Activities ({activities.length})
-                                        </button>
-                                        <button
-                                          className={`tab-button ${
-                                            activeTab === "site_visit"
-                                              ? "active"
-                                              : ""
-                                          }`}
-                                          onClick={() =>
-                                            setActiveTab("site_visit")
-                                          }
-                                        >
-                                          Site Visits (
-                                          {
-                                            activities.filter(
-                                              (a) => a.type === "site_visit"
-                                            ).length
-                                          }
-                                          )
-                                        </button>
-                                        <button
-                                          className={`tab-button ${
-                                            activeTab === "property_interest"
-                                              ? "active"
-                                              : ""
-                                          }`}
-                                          onClick={() =>
-                                            setActiveTab("property_interest")
-                                          }
-                                        >
-                                          Interests (
-                                          {
-                                            activities.filter(
-                                              (a) =>
-                                                a.type === "property_interest"
-                                            ).length
-                                          }
-                                          )
-                                        </button>
-                                        <button
-                                          className={`tab-button ${
-                                            activeTab === "booking_approval"
-                                              ? "active"
-                                              : ""
-                                          }`}
-                                          onClick={() =>
-                                            setActiveTab("booking_approval")
-                                          }
-                                        >
-                                          Approvals (
-                                          {
-                                            activities.filter(
-                                              (a) =>
-                                                a.type === "booking_approval"
-                                            ).length
-                                          }
-                                          )
-                                        </button>
-                                      </div>
-
-                                      <div className="activities-content">
-                                        {activities.length === 0 ? (
-                                          <div className="empty-state">
-                                            <ActivityIcon
-                                              className="empty-icon"
-                                              size={64}
-                                            />
-                                            <h3 className="empty-title">
-                                              No activities found
-                                            </h3>
-                                            <p className="empty-subtitle">
-                                              Activities will appear here as
-                                              users interact with the system
-                                            </p>
-                                          </div>
-                                        ) : (
-                                          <div className="activities-list">
-                                            {activities.map((activity) => (
-                                              <div
-                                                key={activity.id}
-                                                className="activity-card"
-                                              >
-                                                <div className="activity-header">
-                                                  <div className="activity-main">
-                                                    {activity.type ===
-                                                    "site_visit" ? (
-                                                      <Calendar
-                                                        className="activity-icon site-visit"
-                                                        size={20}
-                                                      />
-                                                    ) : activity.type ===
-                                                      "property_interest" ? (
-                                                      <Heart
-                                                        className="activity-icon interest"
-                                                        size={20}
-                                                      />
-                                                    ) : activity.type ===
-                                                      "booking_approval" ? (
-                                                      <CheckCircle
-                                                        className="activity-icon approval"
-                                                        size={20}
-                                                      />
-                                                    ) : activity.type ===
-                                                      "booking_rejection" ? (
-                                                      <XCircle
-                                                        className="activity-icon rejection"
-                                                        size={20}
-                                                      />
-                                                    ) : (
-                                                      <ActivityIcon
-                                                        className="activity-icon"
-                                                        size={20}
-                                                      />
-                                                    )}
-                                                    <div className="activity-info">
-                                                      <h4 className="activity-title">
-                                                        {activity.title}
-                                                      </h4>
-                                                      <p className="activity-description">
-                                                        {activity.description}
-                                                      </p>
-                                                      <div className="activity-meta">
-                                                        <span className="user-info">
-                                                          <User size={14} />
-                                                          {activity.user_name}
-                                                        </span>
-                                                        <span className="property-info">
-                                                          <Building size={14} />
-                                                          {
-                                                            activity.property_name
-                                                          }
-                                                        </span>
-                                                        <span className="timestamp">
-                                                          {activity.created_at.toLocaleString()}
-                                                        </span>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                  <div className="activity-badges">
-                                                    {activity.priority ===
-                                                      "high" && (
-                                                      <span className="priority-badge high">
-                                                        High
-                                                      </span>
-                                                    )}
-                                                    <span
-                                                      className={`status-badge ${activity.status}`}
-                                                    >
-                                                      {activity.status}
-                                                    </span>
-                                                  </div>
-                                                </div>
-
-                                                <div className="activity-details">
-                                                  <div className="detail-grid">
-                                                    <div className="detail-item">
-                                                      <Mail size={14} />
-                                                      <span>
-                                                        {activity.user_email}
-                                                      </span>
-                                                    </div>
-                                                    <div className="detail-item">
-                                                      <Phone size={14} />
-                                                      <span>
-                                                        {activity.user_phone}
-                                                      </span>
-                                                    </div>
-                                                    {activity.details &&
-                                                      Object.entries(
-                                                        activity.details
-                                                      ).map(([key, value]) => (
-                                                        <div
-                                                          key={key}
-                                                          className="detail-item"
-                                                        >
-                                                          <span className="detail-label">
-                                                            {key.replace(
-                                                              /_/g,
-                                                              " "
-                                                            )}
-                                                            :
-                                                          </span>
-                                                          <span>{value}</span>
-                                                        </div>
-                                                      ))}
-                                                  </div>
-                                                </div>
-
-                                                {activity.status ===
-                                                  "pending" && (
-                                                  <div className="activity-actions">
-                                                    <button
-                                                      className="action-button approve"
-                                                      onClick={() =>
-                                                        handleAction(
-                                                          activity.id,
-                                                          "approve"
-                                                        )
-                                                      }
-                                                    >
-                                                      <CheckCircle size={16} />
-                                                      Approve
-                                                    </button>
-                                                    <button
-                                                      className="action-button reject"
-                                                      onClick={() =>
-                                                        handleAction(
-                                                          activity.id,
-                                                          "reject"
-                                                        )
-                                                      }
-                                                    >
-                                                      <XCircle size={16} />
-                                                      Reject
-                                                    </button>
-                                                    <button className="action-button view">
-                                                      <Eye size={16} />
-                                                      View Details
-                                                    </button>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="activity-summary">
-                                        <div className="summary-grid">
-                                          <div className="summary-card">
-                                            <div className="summary-icon pending">
-                                              <Clock size={24} />
-                                            </div>
-                                            <div className="summary-info">
-                                              <h4>
-                                                {
-                                                  activities.filter(
-                                                    (a) =>
-                                                      a.status === "pending"
-                                                  ).length
-                                                }
-                                              </h4>
-                                              <p>Pending Actions</p>
-                                            </div>
-                                          </div>
-                                          <div className="summary-card">
-                                            <div className="summary-icon approved">
-                                              <CheckCircle size={24} />
-                                            </div>
-                                            <div className="summary-info">
-                                              <h4>
-                                                {
-                                                  activities.filter(
-                                                    (a) =>
-                                                      a.status === "approved"
-                                                  ).length
-                                                }
-                                              </h4>
-                                              <p>Approved</p>
-                                            </div>
-                                          </div>
-                                          <div className="summary-card">
-                                            <div className="summary-icon active">
-                                              <Heart size={24} />
-                                            </div>
-                                            <div className="summary-info">
-                                              <h4>
-                                                {
-                                                  activities.filter(
-                                                    (a) => a.status === "active"
-                                                  ).length
-                                                }
-                                              </h4>
-                                              <p>Active Interests</p>
-                                            </div>
-                                          </div>
-                                          <div className="summary-card">
-                                            <div className="summary-icon total">
-                                              <ActivityIcon size={24} />
-                                            </div>
-                                            <div className="summary-info">
-                                              <h4>{activities.length}</h4>
-                                              <p>Total Activities</p>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
                             </div>
-
                             <div className="interest-footer">
                               <span className="created-date">
                                 Created:{" "}
@@ -1777,85 +1040,757 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
+          */}
+
+          {activeTab === "message-templates" && (
+            <div className="templates-section">
+              <div className="admin-container">
+                <div className="admin-header">
+                  <h1>Message Templates</h1>
+                  <p>
+                    Customize automated notification messages sent to clients
+                  </p>
+                </div>
+
+                <div className="global-settings-section">
+                  <div className="section-header">
+                    <Settings size={20} />
+                    <h2>Global Settings</h2>
+                  </div>
+
+                  <div className="global-settings-grid">
+                    <div className="setting-item">
+                      <label>
+                        <Phone size={16} />
+                        Support Phone
+                      </label>
+                      <input
+                        type="text"
+                        value={globalSettings.support_phone || ""}
+                        onChange={(e) =>
+                          setGlobalSettings((prev) => ({
+                            ...prev,
+                            support_phone: e.target.value,
+                          }))
+                        }
+                        placeholder="+254 700 000 000"
+                      />
+                    </div>
+
+                    <div className="setting-item">
+                      <label>
+                        <Globe size={16} />
+                        Website URL
+                      </label>
+                      <input
+                        type="url"
+                        value={globalSettings.website_url || ""}
+                        onChange={(e) =>
+                          setGlobalSettings((prev) => ({
+                            ...prev,
+                            website_url: e.target.value,
+                          }))
+                        }
+                        placeholder="https://victor-springs.com"
+                      />
+                    </div>
+
+                    <div className="setting-item">
+                      <label>
+                        <Building size={16} />
+                        Company Name
+                      </label>
+                      <input
+                        type="text"
+                        value={globalSettings.company_name || ""}
+                        onChange={(e) =>
+                          setGlobalSettings((prev) => ({
+                            ...prev,
+                            company_name: e.target.value,
+                          }))
+                        }
+                        placeholder="Victor Springs"
+                      />
+                    </div>
+
+                    <div className="setting-item">
+                      <label>
+                        <Mail size={16} />
+                        Support Email
+                      </label>
+                      <input
+                        type="email"
+                        value={globalSettings.support_email || ""}
+                        onChange={(e) =>
+                          setGlobalSettings((prev) => ({
+                            ...prev,
+                            support_email: e.target.value,
+                          }))
+                        }
+                        placeholder="support@victor-springs.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="settings-actions">
+                    <button
+                      onClick={() => handleUpdateGlobalSettings(globalSettings)}
+                      className="save-settings-btn"
+                    >
+                      <Save size={16} />
+                      Save Global Settings
+                    </button>
+                  </div>
+                </div>
+
+                <div className="templates-section">
+                  <div className="section-header">
+                    <MessageSquare size={20} />
+                    <h2>Message Templates</h2>
+                  </div>
+
+                  <div className="templates-grid">
+                    {Object.entries(templates).map(([key, template]) => (
+                      <div key={key} className="template-card">
+                        <div className="template-header">
+                          <div className="template-icon">
+                            {key === "site_visit_request"
+                              ? "🏛️"
+                              : key === "site_visit_confirmation"
+                              ? "✅"
+                              : key === "express_interest"
+                              ? "💝"
+                              : key === "unit_available"
+                              ? "🎉"
+                              : key === "site_visit_reminder"
+                              ? "⏰"
+                              : key === "welcome"
+                              ? "🎉"
+                              : key === "account_verification"
+                              ? "🔐"
+                              : key === "password_reset"
+                              ? "🔑"
+                              : "📱"}
+                          </div>
+                          <div className="template-info">
+                            <h3>{key.replace(/_/g, " ").toUpperCase()}</h3>
+                            <p>{template.subject}</p>
+                          </div>
+                          <button
+                            onClick={() => handleEditTemplate(key, template)}
+                            className="edit-template-btn"
+                            disabled={editingTemplate === key}
+                          >
+                            <Edit3 size={16} />
+                            Edit
+                          </button>
+                        </div>
+
+                        {editingTemplate === key ? (
+                          <div className="template-editor">
+                            <div className="editor-field">
+                              <label>Subject Line</label>
+                              <input
+                                type="text"
+                                value={editedSubject}
+                                onChange={(e) =>
+                                  setEditedSubject(e.target.value)
+                                }
+                                placeholder="Enter subject line"
+                              />
+                            </div>
+
+                            <div className="editor-field">
+                              <label>Message Content</label>
+                              <textarea
+                                value={editedMessage}
+                                onChange={(e) =>
+                                  setEditedMessage(e.target.value)
+                                }
+                                placeholder="Enter message content"
+                                rows="12"
+                              />
+                            </div>
+
+                            <div className="variables-info">
+                              <h4>Available Variables:</h4>
+                              <div className="variables-list">
+                                {template.variables.map((variable) => (
+                                  <span key={variable} className="variable-tag">
+                                    {`{${variable}}`}
+                                  </span>
+                                ))}
+                              </div>
+                              <p className="variables-note">
+                                Use curly braces {"{variable}"} to insert
+                                dynamic content
+                              </p>
+                            </div>
+
+                            <div className="editor-actions">
+                              <button
+                                onClick={() => {
+                                  setEditingTemplate(null);
+                                  setEditedSubject("");
+                                  setEditedMessage("");
+                                }}
+                                className="cancel-btn"
+                                disabled={saving}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={handleSaveTemplate}
+                                className="save-btn"
+                                disabled={saving}
+                              >
+                                {saving ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Saving...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save size={16} />
+                                    Save Template
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="template-preview">
+                            <pre className="message-preview">
+                              {template.message}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "notifications" && (
+            <div className="notifications-section">
+              <div className="admin-container">
+                <div className="admin-header">
+                  <h1>Notification Manager</h1>
+                  <p>
+                    Manage automated notifications, reminders, and confirmations
+                    for bookings
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Bell className="text-indigo-600" size={24} />
+                    <div>
+                      <h2 className="text-xl font-semibold">
+                        Booking Notifications
+                      </h2>
+                      <p className="text-sm text-gray-600">
+                        Send automated notifications to booking customers
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {notificationBookings.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Calendar
+                          size={48}
+                          className="mx-auto mb-4 opacity-50"
+                        />
+                        <p>No bookings found</p>
+                      </div>
+                    ) : (
+                      notificationBookings.map((booking) => (
+                        <div
+                          key={booking.id}
+                          className="border border-gray-200 rounded-lg p-4"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <User size={20} className="text-gray-400" />
+                              <div>
+                                <h3 className="font-semibold">
+                                  {booking.user_name}
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                  {booking.user_email}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                                Confirmed
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                {new Date(
+                                  booking.appointment_date
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-4 mb-3">
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <Phone size={14} />
+                              {booking.user_phone}
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <Mail size={14} />
+                              {booking.property_name} - {booking.unit_type}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() =>
+                                sendNotification(booking.id, "confirmation")
+                              }
+                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
+                            >
+                              <CheckCircle size={14} />
+                              Send Confirmation
+                            </button>
+                            <button
+                              onClick={() =>
+                                sendNotification(booking.id, "reminder")
+                              }
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
+                            >
+                              <Clock size={14} />
+                              Send Reminder
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedBooking(booking);
+                                setNotificationType("custom");
+                              }}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
+                            >
+                              <MessageSquare size={14} />
+                              Custom Message
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {selectedBooking && notificationType === "custom" && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                      <h3 className="text-lg font-semibold mb-4">
+                        Send Custom Message
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        To: {selectedBooking.user_name} (
+                        {selectedBooking.user_phone})
+                      </p>
+                      <textarea
+                        value={customMessage}
+                        onChange={(e) => setCustomMessage(e.target.value)}
+                        placeholder="Enter your custom message..."
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-4"
+                        rows={4}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedBooking(null);
+                            setCustomMessage("");
+                          }}
+                          className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            sendNotification(
+                              selectedBooking.id,
+                              "custom",
+                              customMessage
+                            );
+                            setSelectedBooking(null);
+                            setCustomMessage("");
+                          }}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                        >
+                          <Send size={16} />
+                          Send Message
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "activity" && (
+            <div className="activity-section">
+              <div className="admin-container">
+                <div className="admin-header">
+                  <h1>Activity Management</h1>
+                  <p>
+                    Track and manage user activities, approvals, and requests
+                  </p>
+                </div>
+
+                <div className="activity-filters">
+                  <div className="search-bar">
+                    <Search size={18} />
+                    <input
+                      type="text"
+                      placeholder="Search activities..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="search-input"
+                    />
+                  </div>
+
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="active">Active</option>
+                  </select>
+                </div>
+
+                <div className="activity-tabs">
+                  <button
+                    className={`tab-button ${
+                      activeTab === "all" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTab("all")}
+                  >
+                    All Activities ({activities.length})
+                  </button>
+                  <button
+                    className={`tab-button ${
+                      activeTab === "site_visit" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTab("site_visit")}
+                  >
+                    Site Visits (
+                    {
+                      activities.filter((a) => a.type === "site_visit").length
+                    }
+                    )
+                  </button>
+                  <button
+                    className={`tab-button ${
+                      activeTab === "property_interest" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTab("property_interest")}
+                  >
+                    Interests (
+                    {
+                      activities.filter((a) => a.type === "property_interest")
+                        .length
+                    }
+                    )
+                  </button>
+                  <button
+                    className={`tab-button ${
+                      activeTab === "booking_approval" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTab("booking_approval")}
+                  >
+                    Approvals (
+                    {
+                      activities.filter((a) => a.type === "booking_approval")
+                        .length
+                    }
+                    )
+                  </button>
+                </div>
+
+                <div className="activities-content">
+                  {activities.length === 0 ? (
+                    <div className="empty-state">
+                      <ActivityIcon className="empty-icon" size={64} />
+                      <h3 className="empty-title">No activities found</h3>
+                      <p className="empty-subtitle">
+                        Activities will appear here as users interact with the
+                        system
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="activities-list">
+                      {activities.map((activity) => (
+                        <div key={activity.id} className="activity-card">
+                          <div className="activity-header">
+                            <div className="activity-main">
+                              {activity.type === "site_visit" ? (
+                                <Calendar
+                                  className="activity-icon site-visit"
+                                  size={20}
+                                />
+                              ) : activity.type === "property_interest" ? (
+                                <Heart
+                                  className="activity-icon interest"
+                                  size={20}
+                                />
+                              ) : activity.type === "booking_approval" ? (
+                                <CheckCircle
+                                  className="activity-icon approval"
+                                  size={20}
+                                />
+                              ) : activity.type === "booking_rejection" ? (
+                                <XCircle
+                                  className="activity-icon rejection"
+                                  size={20}
+                                />
+                              ) : (
+                                <ActivityIcon
+                                  className="activity-icon"
+                                  size={20}
+                                />
+                              )}
+                              <div className="activity-info">
+                                <h4 className="activity-title">
+                                  {activity.title}
+                                </h4>
+                                <p className="activity-description">
+                                  {activity.description}
+                                </p>
+                                <div className="activity-meta">
+                                  <span className="user-info">
+                                    <User size={14} />
+                                    {activity.user_name}
+                                  </span>
+                                  <span className="property-info">
+                                    <Building size={14} />
+                                    {activity.property_name}
+                                  </span>
+                                  <span className="timestamp">
+                                    {activity.created_at.toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="activity-badges">
+                              {activity.priority === "high" && (
+                                <span className="priority-badge high">
+                                  High
+                                </span>
+                              )}
+                              <span
+                                className={`status-badge ${activity.status}`}
+                              >
+                                {activity.status}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="activity-details">
+                            <div className="detail-grid">
+                              <div className="detail-item">
+                                <Mail size={14} />
+                                <span>{activity.user_email}</span>
+                              </div>
+                              <div className="detail-item">
+                                <Phone size={14} />
+                                <span>{activity.user_phone}</span>
+                              </div>
+                              {activity.details &&
+                                Object.entries(activity.details).map(
+                                  ([key, value]) => (
+                                    <div key={key} className="detail-item">
+                                      <span className="detail-label">
+                                        {key.replace(/_/g, " ")}:
+                                      </span>
+                                      <span>{value}</span>
+                                    </div>
+                                  )
+                                )}
+                            </div>
+                          </div>
+
+                          {activity.status === "pending" && (
+                            <div className="activity-actions">
+                              <button
+                                className="action-button approve"
+                                onClick={() =>
+                                  handleAction(activity.id, "approve")
+                                }
+                              >
+                                <CheckCircle size={16} />
+                                Approve
+                              </button>
+                              <button
+                                className="action-button reject"
+                                onClick={() =>
+                                  handleAction(activity.id, "reject")
+                                }
+                              >
+                                <XCircle size={16} />
+                                Reject
+                              </button>
+                              <button className="action-button view">
+                                <Eye size={16} />
+                                View Details
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="activity-summary">
+                  <div className="summary-grid">
+                    <div className="summary-card">
+                      <div className="summary-icon pending">
+                        <Clock size={24} />
+                      </div>
+                      <div className="summary-info">
+                        <h4>
+                          {
+                            activities.filter((a) => a.status === "pending")
+                              .length
+                          }
+                        </h4>
+                        <p>Pending Actions</p>
+                      </div>
+                    </div>
+                    <div className="summary-card">
+                      <div className="summary-icon approved">
+                        <CheckCircle size={24} />
+                      </div>
+                      <div className="summary-info">
+                        <h4>
+                          {
+                            activities.filter((a) => a.status === "approved")
+                              .length
+                          }
+                        </h4>
+                        <p>Approved</p>
+                      </div>
+                    </div>
+                    <div className="summary-card">
+                      <div className="summary-icon active">
+                        <Heart size={24} />
+                      </div>
+                      <div className="summary-info">
+                        <h4>
+                          {
+                            activities.filter((a) => a.status === "active")
+                              .length
+                          }
+                        </h4>
+                        <p>Active Interests</p>
+                      </div>
+                    </div>
+                    <div className="summary-card">
+                      <div className="summary-icon total">
+                        <ActivityIcon size={24} />
+                      </div>
+                      <div className="summary-info">
+                        <h4>{activities.length}</h4>
+                        <p>Total Activities</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {activeTab === "communications" && (
             <div className="communications-section">
-              <div className="max-w-4xl mx-auto px-4 py-8">
-                <div className="mb-8">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    Communication Settings
-                  </h1>
-                  <p className="text-gray-600">
+              <div className="admin-container">
+                <div className="admin-header">
+                  <h1>Communication Settings</h1>
+                  <p>
                     Configure WhatsApp and SMS settings for automated
                     notifications and live chat
                   </p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-white p-6 rounded-lg shadow-md border">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
+                <div className="communications-grid">
+                  <div className="communication-card">
+                    <div className="communication-card-header">
+                      <div className="communication-card-title">
                         <div
-                          className={`w-3 h-3 rounded-full ${
+                          className={`status-indicator ${
                             bridgeStatus === "connected"
-                              ? "bg-green-500"
+                              ? "connected"
                               : bridgeStatus === "connecting"
-                              ? "bg-yellow-500"
-                              : "bg-red-500"
+                              ? "connecting"
+                              : "disconnected"
                           }`}
                         ></div>
-                        <h3 className="font-semibold">WhatsApp Bridge</h3>
+                        <span>WhatsApp Bridge</span>
                       </div>
-                      <Phone className="text-gray-400" size={20} />
+                      <Phone size={20} />
                     </div>
-                    <p className="text-sm text-gray-600 capitalize">
-                      {bridgeStatus}
-                    </p>
-                    <button
-                      onClick={checkBridgeStatus}
-                      className="mt-2 text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
-                    >
-                      <RefreshCw size={14} />
-                      Refresh Status
-                    </button>
+                    <div className="communication-card-content">
+                      <p className="capitalize">{bridgeStatus}</p>
+                      <a
+                        href="#"
+                        onClick={checkBridgeStatus}
+                        className="refresh-btn"
+                      >
+                        <RefreshCw size={14} />
+                        Refresh Status
+                      </a>
+                    </div>
                   </div>
 
-                  <div className="bg-white p-6 rounded-lg shadow-md border">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                        <h3 className="font-semibold">SMS Gateway</h3>
+                  <div className="communication-card">
+                    <div className="communication-card-header">
+                      <div className="communication-card-title">
+                        <div className="status-indicator connected"></div>
+                        <span>SMS Gateway</span>
                       </div>
-                      <MessageSquare className="text-gray-400" size={20} />
+                      <MessageSquare size={20} />
                     </div>
-                    <p className="text-sm text-gray-600">
-                      {settings.sms_api_key ? "Configured" : "Not configured"}
-                    </p>
+                    <div className="communication-card-content">
+                      <p>
+                        {settings.sms_api_key
+                          ? "Configured"
+                          : "Not configured"}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="bg-white p-6 rounded-lg shadow-md border">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                        <h3 className="font-semibold">Live Chat</h3>
+                  <div className="communication-card">
+                    <div className="communication-card-header">
+                      <div className="communication-card-title">
+                        <div className="status-indicator connected"></div>
+                        <span>Live Chat</span>
                       </div>
-                      <Settings className="text-gray-400" size={20} />
+                      <Settings size={20} />
                     </div>
-                    <p className="text-sm text-gray-600">Widget active</p>
+                    <div className="communication-card-content">
+                      <p>Widget active</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <Phone className="text-green-600" size={24} />
+                <div className="settings-form">
+                  <h2>
+                    <Phone size={24} />
                     WhatsApp Settings
                   </h2>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Admin WhatsApp Number
-                      </label>
+                  <div className="form-grid">
+                    <div className="form-field">
+                      <label>Admin WhatsApp Number</label>
                       <input
                         type="tel"
                         value={settings.whatsapp_number}
@@ -1866,17 +1801,12 @@ const AdminDashboard = () => {
                           }))
                         }
                         placeholder="+254700000000"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Number that receives website chat messages
-                      </p>
+                      <p>Number that receives website chat messages</p>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Bridge URL
-                      </label>
+                    <div className="form-field">
+                      <label>Bridge URL</label>
                       <input
                         type="url"
                         value={settings.whatsapp_bridge_url}
@@ -1887,18 +1817,18 @@ const AdminDashboard = () => {
                           }))
                         }
                         placeholder="http://localhost:3001"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                     </div>
                   </div>
 
-                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h3 className="font-semibold mb-3">WhatsApp Connection</h3>
+                  <div className="connection-setup">
+                    <h3>WhatsApp Connection</h3>
+                    <p>Click to generate QR code for WhatsApp Web connection</p>
                     <div className="flex items-center gap-4">
                       <button
                         onClick={connectWhatsApp}
                         disabled={testingConnection}
-                        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                        className="connect-btn"
                       >
                         {testingConnection ? (
                           <RefreshCw className="animate-spin" size={16} />
@@ -1909,24 +1839,19 @@ const AdminDashboard = () => {
                           ? "Generating..."
                           : "Connect WhatsApp"}
                       </button>
-                      <p className="text-sm text-gray-600">
-                        Click to generate QR code for WhatsApp Web connection
-                      </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <MessageSquare className="text-blue-600" size={24} />
+                <div className="settings-form">
+                  <h2>
+                    <MessageSquare size={24} />
                     SMS Settings (httpSMS)
                   </h2>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        httpSMS API Key
-                      </label>
+                  <div className="form-grid">
+                    <div className="form-field">
+                      <label>httpSMS API Key</label>
                       <input
                         type="password"
                         value={settings.sms_api_key}
@@ -1937,17 +1862,12 @@ const AdminDashboard = () => {
                           }))
                         }
                         placeholder="uk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        From httpSMS Android app
-                      </p>
+                      <p>From httpSMS Android app</p>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Sender Phone Number
-                      </label>
+                    <div className="form-field">
+                      <label>Sender Phone Number</label>
                       <input
                         type="tel"
                         value={settings.sms_sender_phone}
@@ -1958,23 +1878,18 @@ const AdminDashboard = () => {
                           }))
                         }
                         placeholder="+254700000000"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Your phone number for sending SMS
-                      </p>
+                      <p>Your phone number for sending SMS</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                  <h2 className="text-xl font-semibold mb-4">Testing</h2>
+                <div className="settings-form">
+                  <h2>Testing</h2>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Test Phone Number
-                      </label>
+                  <div className="form-grid">
+                    <div className="form-field">
+                      <label>Test Phone Number</label>
                       <input
                         type="tel"
                         value={settings.test_phone}
@@ -1985,15 +1900,14 @@ const AdminDashboard = () => {
                           }))
                         }
                         placeholder="+254700000000"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       />
                     </div>
 
-                    <div className="flex items-end">
+                    <div className="form-field">
                       <button
                         onClick={testConnection}
                         disabled={testingConnection || !settings.test_phone}
-                        className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg flex items-center justify-center gap-2"
+                        className="test-btn btn-full"
                       >
                         {testingConnection ? (
                           <RefreshCw className="animate-spin" size={16} />
@@ -2007,10 +1921,7 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="flex justify-end">
-                  <button
-                    onClick={saveSettings}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg flex items-center gap-2 font-semibold"
-                  >
+                  <button onClick={saveSettings} className="save-btn">
                     <Save size={16} />
                     Save Settings
                   </button>
@@ -2029,7 +1940,9 @@ const AdminDashboard = () => {
         >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editingProperty ? "Edit Property" : "Add New Property"}</h3>
+              <h3>
+                {editingProperty ? "Edit Property" : "Add New Property"}
+              </h3>
               <button
                 className="modal-close"
                 onClick={() => setShowPropertyModal(false)}
@@ -2050,7 +1963,10 @@ const AdminDashboard = () => {
                     type="text"
                     value={propertyForm.name}
                     onChange={(e) =>
-                      setPropertyForm({ ...propertyForm, name: e.target.value })
+                      setPropertyForm({
+                        ...propertyForm,
+                        name: e.target.value,
+                      })
                     }
                     required
                   />

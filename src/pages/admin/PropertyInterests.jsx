@@ -11,6 +11,9 @@ import {
   Eye,
   Trash2,
   Filter,
+  Bell,
+  X,
+  Send,
 } from "lucide-react";
 import "./PropertyInterests.css";
 
@@ -18,6 +21,10 @@ const PropertyInterests = () => {
   const [interests, setInterests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all, signed_in, guests
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [selectedInterest, setSelectedInterest] = useState(null);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [sendingNotification, setSendingNotification] = useState(false);
 
   useEffect(() => {
     fetchInterests();
@@ -48,6 +55,62 @@ const PropertyInterests = () => {
       console.error("Error deleting interest:", error);
       toast.error("Failed to delete interest");
     }
+  };
+
+  const openNotificationModal = (interest) => {
+    setSelectedInterest(interest);
+    // Set default notification message
+    const defaultMessage = `🏠 Great news! A unit in ${interest.property_name} (${interest.unit_type_name}) is now available!
+
+Hi ${interest.contact_name},
+
+We're excited to inform you that a unit matching your interest in ${interest.property_name} has become available. This is a limited-time opportunity!
+
+📍 Property: ${interest.property_name}
+🏢 Unit Type: ${interest.unit_type_name}
+💰 Contact us for pricing details
+
+Don't miss out on this opportunity! Contact us today to secure this unit.
+
+Best regards,
+Victor Springs Team
+📞 +254 700 000 000`;
+
+    setNotificationMessage(defaultMessage);
+    setShowNotificationModal(true);
+  };
+
+  const sendNotification = async () => {
+    if (!selectedInterest || !notificationMessage.trim()) {
+      toast.error("Please enter a notification message");
+      return;
+    }
+
+    setSendingNotification(true);
+    try {
+      // Use the custom notification endpoint
+      await api.post("/notifications/send-custom", {
+        phone: selectedInterest.contact_phone,
+        message: notificationMessage,
+      });
+
+      // Update the interest to mark as notified (you might want to add a backend field for this)
+      toast.success("Notification sent successfully!");
+      setShowNotificationModal(false);
+      setSelectedInterest(null);
+      setNotificationMessage("");
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      toast.error("Failed to send notification");
+    } finally {
+      setSendingNotification(false);
+    }
+  };
+
+  const isInterestActive = (interest) => {
+    const validUntil = new Date(interest.valid_until);
+    const now = new Date();
+    return validUntil > now;
   };
 
   const filteredInterests = interests.filter((interest) => {
@@ -90,7 +153,7 @@ const PropertyInterests = () => {
         {/* Stats Cards */}
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-icon">
+            <div className="stat-icon users">
               <Users size={24} />
             </div>
             <div className="stat-content">
@@ -100,7 +163,7 @@ const PropertyInterests = () => {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">
+            <div className="stat-icon signed-in">
               <UserCheck size={24} />
             </div>
             <div className="stat-content">
@@ -112,7 +175,7 @@ const PropertyInterests = () => {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">
+            <div className="stat-icon guests">
               <Users size={24} />
             </div>
             <div className="stat-content">
@@ -152,8 +215,8 @@ const PropertyInterests = () => {
           </div>
         </div>
 
-        {/* Interests List */}
-        <div className="interests-list">
+        {/* Interests Table */}
+        <div className="data-table">
           {filteredInterests.length === 0 ? (
             <div className="empty-state">
               <Users size={48} />
@@ -165,15 +228,26 @@ const PropertyInterests = () => {
               </p>
             </div>
           ) : (
-            <div className="interests-grid">
-              {filteredInterests.map((interest) => (
-                <div key={interest.id} className="interest-card">
-                  <div className="interest-header">
-                    <div className="interest-type">
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Contact</th>
+                  <th>Property</th>
+                  <th>Unit Type</th>
+                  <th>Timeframe</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInterests.map((interest) => (
+                  <tr key={interest.id}>
+                    <td>
                       {interest.user_id ? (
                         <span className="type-badge type-signed-in">
                           <UserCheck size={14} />
-                          Signed-in User
+                          User
                         </span>
                       ) : (
                         <span className="type-badge type-guest">
@@ -181,76 +255,131 @@ const PropertyInterests = () => {
                           Guest
                         </span>
                       )}
-                    </div>
-                    <div className="interest-actions">
-                      <button
-                        className="action-btn action-delete"
-                        onClick={() => deleteInterest(interest.id)}
-                        title="Delete interest"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="interest-content">
-                    <div className="interest-main">
-                      <h3 className="property-name">
-                        {interest.property_name}
-                      </h3>
-                      <p className="unit-type">{interest.unit_type_name}</p>
-
-                      <div className="contact-info">
-                        <div className="contact-item">
-                          <UserCheck size={16} />
-                          <span>{interest.contact_name}</span>
+                    </td>
+                    <td>
+                      <div>
+                        <div className="font-semibold">
+                          {interest.contact_name}
                         </div>
-                        <div className="contact-item">
-                          <Mail size={16} />
-                          <span>{interest.contact_email}</span>
+                        <div className="text-sm text-gray-600">
+                          {interest.contact_email}
                         </div>
-                        <div className="contact-item">
-                          <Phone size={16} />
-                          <span>{interest.contact_phone}</span>
+                        <div className="text-sm text-gray-600">
+                          {interest.contact_phone}
                         </div>
                       </div>
-
-                      <div className="interest-details">
-                        <div className="detail-item">
-                          <Calendar size={16} />
-                          <span>
-                            Notify within:{" "}
-                            {getTimeframeText(interest.timeframe_months)}
-                          </span>
-                        </div>
-                        {interest.guest_id && (
-                          <div className="detail-item">
-                            <Eye size={16} />
-                            <span>Guest ID: {interest.guest_id}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {interest.special_requests && (
-                        <div className="special-requests">
-                          <MessageSquare size={16} />
-                          <p>{interest.special_requests}</p>
-                        </div>
+                    </td>
+                    <td>{interest.property_name}</td>
+                    <td>{interest.unit_type_name}</td>
+                    <td>{getTimeframeText(interest.timeframe_months)}</td>
+                    <td>
+                      {isInterestActive(interest) ? (
+                        <span className="status-badge active">Active</span>
+                      ) : (
+                        <span className="status-badge expired">Expired</span>
                       )}
-                    </div>
-
-                    <div className="interest-footer">
-                      <span className="created-date">
-                        Created:{" "}
-                        {new Date(interest.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                    </td>
+                    <td>
+                      <div className="flex gap-2">
+                        {isInterestActive(interest) && (
+                          <button
+                            className="notify-btn"
+                            onClick={() => openNotificationModal(interest)}
+                            title="Send availability notification"
+                          >
+                            <Bell size={14} />
+                            Notify
+                          </button>
+                        )}
+                        <button
+                          className="btn-delete"
+                          onClick={() => deleteInterest(interest.id)}
+                          title="Delete interest"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
+
+        {/* Notification Modal */}
+        {showNotificationModal && selectedInterest && (
+          <div
+            className="notification-modal-overlay"
+            onClick={() => setShowNotificationModal(false)}
+          >
+            <div
+              className="notification-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="notification-modal-header">
+                <h3>Send Availability Notification</h3>
+                <button
+                  onClick={() => setShowNotificationModal(false)}
+                  className="notification-modal-close"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="notification-modal-content">
+                <div className="notification-form-group">
+                  <label>Recipient: {selectedInterest.contact_name}</label>
+                  <p className="text-sm text-gray-600">
+                    Phone: {selectedInterest.contact_phone}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Property: {selectedInterest.property_name} (
+                    {selectedInterest.unit_type_name})
+                  </p>
+                </div>
+
+                <div className="notification-form-group">
+                  <label htmlFor="notification-message">
+                    Notification Message
+                  </label>
+                  <textarea
+                    id="notification-message"
+                    value={notificationMessage}
+                    onChange={(e) => setNotificationMessage(e.target.value)}
+                    placeholder="Enter the notification message..."
+                    rows="8"
+                  />
+                </div>
+
+                <div className="notification-modal-actions">
+                  <button
+                    type="button"
+                    onClick={() => setShowNotificationModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    onClick={sendNotification}
+                    disabled={
+                      sendingNotification || !notificationMessage.trim()
+                    }
+                  >
+                    {sendingNotification ? (
+                      "Sending..."
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        Send Notification
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

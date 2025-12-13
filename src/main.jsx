@@ -25,6 +25,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import "./pages/admin/AdminDashboard.css";
 import "./pages/admin/Activity.css";
 import "./pages/admin/MessageTemplates.css";
+import "./pages/admin/PropertyInterests.css";
+import "./pages/admin/PropertyManagement.css";
 
 // Preload client page CSS
 import "./pages/client/ClientDashboard.css";
